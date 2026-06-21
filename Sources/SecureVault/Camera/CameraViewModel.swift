@@ -1,4 +1,3 @@
-// CameraViewModel.swift
 import AVFoundation
 import UIKit
 import Combine
@@ -6,6 +5,8 @@ import Combine
 final class CameraViewModel: NSObject, ObservableObject {
     @Published var capturedImage: UIImage?
     @Published var error: String?
+    @Published var isTorchOn: Bool = false
+    @Published var quickMode: Bool = false
 
     let session = AVCaptureSession()
     private var photoOutput = AVCapturePhotoOutput()
@@ -35,6 +36,15 @@ final class CameraViewModel: NSObject, ObservableObject {
 
     func stopSession() {
         if session.isRunning { session.stopRunning() }
+    }
+
+    func toggleTorch() {
+        guard let device = AVCaptureDevice.default(for: .video),
+              device.hasTorch else { return }
+        try? device.lockForConfiguration()
+        isTorchOn.toggle()
+        device.torchMode = isTorchOn ? .on : .off
+        device.unlockForConfiguration()
     }
 
     func capturePhoto(completion: @escaping (UIImage) -> Void) {
