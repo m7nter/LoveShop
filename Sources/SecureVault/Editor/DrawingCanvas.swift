@@ -52,7 +52,7 @@ struct DrawingCanvas: View {
     }
 
     private func draw(shape: DrawnShape, in ctx: inout GraphicsContext) {
-        var stroke = ctx
+        let stroke = ctx
         stroke.stroke(arrowPath(from: shape.start, to: shape.end),
                       with: .color(shape.color),
                       lineWidth: 0) // overridden below
