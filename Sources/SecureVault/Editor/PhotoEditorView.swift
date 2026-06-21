@@ -1,4 +1,3 @@
-// PhotoEditorView.swift
 import SwiftUI
 
 struct PhotoEditorView: View {
@@ -11,6 +10,7 @@ struct PhotoEditorView: View {
     @State private var selectedColor: Color = .red
     @State private var labelText: String = ""
     @State private var showLabelInput = false
+    @State private var canvasSize: CGSize = .zero
 
     var body: some View {
         NavigationView {
@@ -28,6 +28,7 @@ struct PhotoEditorView: View {
                                       selectedColor: selectedColor)
                             .frame(width: geo.size.width, height: geo.size.height)
                     }
+                    .onAppear { canvasSize = geo.size }
                 }
             }
             .toolbar {
@@ -82,27 +83,89 @@ struct PhotoEditorView: View {
     }
 
     private func saveComposed() {
-        let renderer = UIGraphicsImageRenderer(size: image.size)
+        let imageSize = image.size
+
+        // Вычисляем реальный размер и позицию изображения на экране (scaledToFit)
+        let scaleX = canvasSize.width / imageSize.width
+        let scaleY = canvasSize.height / imageSize.height
+        let scale = min(scaleX, scaleY)
+        let displayedSize = CGSize(width: imageSize.width * scale,
+                                   height: imageSize.height * scale)
+        let offsetX = (canvasSize.width - displayedSize.width) / 2
+        let offsetY = (canvasSize.height - displayedSize.height) / 2
+
+        // Масштаб из экранных координат в координаты изображения
+        let toImageX = imageSize.width / displayedSize.width
+        let toImageY = imageSize.height / displayedSize.height
+
+        let renderer = UIGraphicsImageRenderer(size: imageSize)
         let result = renderer.image { ctx in
             image.draw(at: .zero)
-            // Re-render shapes scaled to image size
-            // (simplified: for production, scale from view coords to image coords)
-            let label = labelText.isEmpty ? nil : labelText
-            if let lbl = label {
+
+            for shape in shapes {
+                let start = CGPoint(
+                    x: (shape.start.x - offsetX) * toImageX,
+                    y: (shape.start.y - offsetY) * toImageY
+                )
+                let end = CGPoint(
+                    x: (shape.end.x - offsetX) * toImageX,
+                    y: (shape.end.y - offsetY) * toImageY
+                )
+                let uiColor = UIColor(shape.color)
+                let lineWidth: CGFloat = 2.5 * toImageX
+
+                switch shape.tool {
+                case .arrow:
+                    drawArrowCG(ctx: ctx.cgContext, from: start, to: end,
+                                color: uiColor, lineWidth: lineWidth)
+                case .oval:
+                    let rect = CGRect(
+                        x: min(start.x, end.x), y: min(start.y, end.y),
+                        width: abs(end.x - start.x), height: abs(end.y - start.y)
+                    )
+                    ctx.cgContext.setStrokeColor(uiColor.cgColor)
+                    ctx.cgContext.setLineWidth(lineWidth)
+                    ctx.cgContext.strokeEllipse(in: rect)
+                case .text:
+                    break
+                }
+            }
+
+            if !labelText.isEmpty {
                 let attrs: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: image.size.width * 0.03, weight: .semibold),
+                    .font: UIFont.systemFont(ofSize: imageSize.width * 0.03, weight: .semibold),
                     .foregroundColor: UIColor.white,
                     .strokeColor: UIColor.black,
                     .strokeWidth: -2.5
                 ]
                 let margin: CGFloat = 16
-                let size = (lbl as NSString).size(withAttributes: attrs)
-                let pt = CGPoint(x: image.size.width - size.width - margin,
-                                 y: image.size.height - size.height - margin)
-                (lbl as NSString).draw(at: pt, withAttributes: attrs)
+                let size = (labelText as NSString).size(withAttributes: attrs)
+                let pt = CGPoint(x: imageSize.width - size.width - margin,
+                                 y: imageSize.height - size.height - margin)
+                (labelText as NSString).draw(at: pt, withAttributes: attrs)
             }
         }
         onSave(result)
+    }
+
+    private func drawArrowCG(ctx: CGContext, from start: CGPoint, to end: CGPoint,
+                              color: UIColor, lineWidth: CGFloat) {
+        ctx.setStrokeColor(color.cgColor)
+        ctx.setLineWidth(lineWidth)
+        ctx.move(to: start)
+        ctx.addLine(to: end)
+        ctx.strokePath()
+
+        let angle = atan2(end.y - start.y, end.x - start.x)
+        let headLen: CGFloat = 14 * lineWidth / 2.5
+        let headAngle: CGFloat = .pi / 6
+        ctx.move(to: end)
+        ctx.addLine(to: CGPoint(x: end.x - headLen * cos(angle - headAngle),
+                                y: end.y - headLen * sin(angle - headAngle)))
+        ctx.move(to: end)
+        ctx.addLine(to: CGPoint(x: end.x - headLen * cos(angle + headAngle),
+                                y: end.y - headLen * sin(angle + headAngle)))
+        ctx.strokePath()
     }
 }
 
