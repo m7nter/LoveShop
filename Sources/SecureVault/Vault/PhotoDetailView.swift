@@ -11,17 +11,17 @@ struct PhotoDetailView: View {
             if let data = try? Data(contentsOf: url), let img = UIImage(data: data) {
                 Image(uiImage: img)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
                     .ignoresSafeArea()
             }
             VStack {
                 HStack {
                     Button("Закрыть") { dismiss() }
                         .foregroundColor(.white)
-                        .padding()
-                        .background(Color.black.opacity(0.4))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.5))
                         .cornerRadius(8)
-                        .padding()
                     Spacer()
                     Button {
                         onDelete()
@@ -29,12 +29,13 @@ struct PhotoDetailView: View {
                     } label: {
                         Image(systemName: "trash")
                             .foregroundColor(.red)
-                            .padding()
-                            .background(Color.black.opacity(0.4))
+                            .padding(10)
+                            .background(Color.black.opacity(0.5))
                             .clipShape(Circle())
                     }
-                    .padding()
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 60)
                 Spacer()
             }
         }
