@@ -1,4 +1,3 @@
-// VaultView.swift
 import SwiftUI
 import AVFoundation
 
@@ -45,7 +44,12 @@ struct VaultView: View {
             CameraScreen(cameraVM: cameraVM) { img in
                 capturedImage = img
                 showCamera = false
-                showEditor = true
+                if cameraVM.quickMode {
+                    // Быстрый режим — сразу сохраняем без редактора
+                    _ = FileStorageManager.shared.save(image: img)
+                } else {
+                    showEditor = true
+                }
             }
         }
         .fullScreenCover(isPresented: $showEditor) {
