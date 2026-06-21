@@ -53,6 +53,14 @@ struct PhotoEditorView: View {
                         Image(systemName: "textformat")
                             .foregroundColor(.white)
                     }
+                    Spacer()
+                    Button {
+                        if !shapes.isEmpty { shapes.removeLast() }
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward")
+                            .foregroundColor(shapes.isEmpty ? .gray : .white)
+                    }
+                    .disabled(shapes.isEmpty)
                 }
             }
             .sheet(isPresented: $showLabelInput) {
@@ -84,8 +92,6 @@ struct PhotoEditorView: View {
 
     private func saveComposed() {
         let imageSize = image.size
-
-        // Вычисляем реальный размер и позицию изображения на экране (scaledToFit)
         let scaleX = canvasSize.width / imageSize.width
         let scaleY = canvasSize.height / imageSize.height
         let scale = min(scaleX, scaleY)
@@ -93,8 +99,6 @@ struct PhotoEditorView: View {
                                    height: imageSize.height * scale)
         let offsetX = (canvasSize.width - displayedSize.width) / 2
         let offsetY = (canvasSize.height - displayedSize.height) / 2
-
-        // Масштаб из экранных координат в координаты изображения
         let toImageX = imageSize.width / displayedSize.width
         let toImageY = imageSize.height / displayedSize.height
 
