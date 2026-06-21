@@ -1,11 +1,18 @@
-// SecureVaultApp.swift
 import SwiftUI
 
 @main
 struct SecureVaultApp: App {
+    @State private var isUnlocked = false
+
     var body: some Scene {
         WindowGroup {
-            CalculatorView()
+            if isUnlocked {
+                VaultView()
+            } else {
+                CalculatorView(onUnlock: {
+                    isUnlocked = true
+                })
+            }
         }
     }
 }
