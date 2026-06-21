@@ -1,10 +1,10 @@
-// GalleryView.swift
 import SwiftUI
 
 struct GalleryView: View {
     @Environment(\.dismiss) var dismiss
     @State private var photoURLs: [URL] = []
     @State private var selectedURL: URL?
+    @State private var showSettings = false
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 2)]
 
     var body: some View {
@@ -25,11 +25,22 @@ struct GalleryView: View {
                     Button("Закрыть") { dismiss() }
                         .foregroundColor(.orange)
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gear")
+                            .foregroundColor(.orange)
+                    }
+                }
             }
         }
         .onAppear { reload() }
         .sheet(item: $selectedURL) { url in
             PhotoDetailView(url: url) { delete(url: url) }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
         }
     }
 
