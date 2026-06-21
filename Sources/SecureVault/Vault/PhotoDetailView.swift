@@ -1,4 +1,3 @@
-// PhotoDetailView.swift
 import SwiftUI
 
 struct PhotoDetailView: View {
@@ -12,12 +11,16 @@ struct PhotoDetailView: View {
             if let data = try? Data(contentsOf: url), let img = UIImage(data: data) {
                 Image(uiImage: img)
                     .resizable()
-                    .scaledToFit()
+                    .scaledToFill()
+                    .ignoresSafeArea()
             }
             VStack {
                 HStack {
                     Button("Закрыть") { dismiss() }
                         .foregroundColor(.white)
+                        .padding()
+                        .background(Color.black.opacity(0.4))
+                        .cornerRadius(8)
                         .padding()
                     Spacer()
                     Button {
@@ -26,6 +29,9 @@ struct PhotoDetailView: View {
                     } label: {
                         Image(systemName: "trash")
                             .foregroundColor(.red)
+                            .padding()
+                            .background(Color.black.opacity(0.4))
+                            .clipShape(Circle())
                     }
                     .padding()
                 }
