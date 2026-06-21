@@ -4,8 +4,8 @@ import PhotosUI
 struct SettingsView: View {
     @ObservedObject private var store = SettingsStore.shared
     @Environment(\.dismiss) var dismiss
-    @State private var showPicker = false
     @State private var pickerItem: PhotosPickerItem?
+    @State private var isLoading = false
 
     var body: some View {
         NavigationView {
@@ -29,14 +29,18 @@ struct SettingsView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
-                            PhotosPicker(selection: $pickerItem,
-                                         matching: .images) {
-                                Text("Выбрать фото")
+                            PhotosPicker(
+                                selection: $pickerItem,
+                                matching: .images,
+                                photoLibrary: .shared()
+                            ) {
+                                Text(isLoading ? "Загрузка..." : "Выбрать фото")
                                     .foregroundColor(.orange)
                             }
                             if store.avatarImage != nil {
                                 Button("Удалить") {
                                     store.avatarImage = nil
+                                    pickerItem = nil
                                 }
                                 .foregroundColor(.red)
                             }
@@ -61,10 +65,21 @@ struct SettingsView: View {
             }
         }
         .onChange(of: pickerItem) { item in
+            guard let item = item else { return }
+            isLoading = true
             Task {
-                if let data = try? await item?.loadTransferable(type: Data.self),
+                if let data = try? await item.loadTransferable(type: Data.self),
                    let img = UIImage(data: data) {
-                    await MainActor.run { store.avatarImage = img }
+                    await MainActor.run {
+                        store.avatarImage = img
+                        isLoading = false
+                        pickerItem = nil
+                    }
+                } else {
+                    await MainActor.run {
+                        isLoading = false
+                        pickerItem = nil
+                    }
                 }
             }
         }
