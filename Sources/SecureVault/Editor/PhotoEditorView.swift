@@ -1,15 +1,31 @@
 import SwiftUI
 
+// MARK: - Хранилище шаблонов
+class LabelTemplatesStore: ObservableObject {
+    @Published var templates: [String] {
+        didSet { UserDefaults.standard.set(templates, forKey: "labelTemplates") }
+    }
+    @Published var selected: String {
+        didSet { UserDefaults.standard.set(selected, forKey: "selectedTemplate") }
+    }
+
+    init() {
+        templates = UserDefaults.standard.stringArray(forKey: "labelTemplates") ?? []
+        selected = UserDefaults.standard.string(forKey: "selectedTemplate") ?? ""
+    }
+}
+
+// MARK: - PhotoEditorView
 struct PhotoEditorView: View {
     let image: UIImage
     let onSave: (UIImage) -> Void
     let onDiscard: () -> Void
 
+    @StateObject private var store = LabelTemplatesStore()
     @State private var shapes: [DrawnShape] = []
     @State private var selectedTool: DrawingTool = .arrow
     @State private var selectedColor: Color = .red
-    @State private var labelText: String = ""
-    @State private var showLabelInput = false
+    @State private var showLabelSheet = false
     @State private var canvasSize: CGSize = .zero
 
     var body: some View {
@@ -30,6 +46,18 @@ struct PhotoEditorView: View {
                     }
                     .onAppear { canvasSize = geo.size }
                 }
+
+                // Показываем активный шаблон снизу
+                if !store.selected.isEmpty {
+                    VStack {
+                        Spacer()
+                        Text(store.selected)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                            .shadow(color: .black, radius: 2)
+                            .padding(.bottom, 60)
+                    }
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -48,10 +76,10 @@ struct PhotoEditorView: View {
                     colorButton(.yellow)
                     Spacer()
                     Button {
-                        showLabelInput = true
+                        showLabelSheet = true
                     } label: {
-                        Image(systemName: "textformat")
-                            .foregroundColor(.white)
+                        Image(systemName: store.selected.isEmpty ? "textformat" : "textformat.alt")
+                            .foregroundColor(store.selected.isEmpty ? .white : .orange)
                     }
                     Spacer()
                     Button {
@@ -63,8 +91,8 @@ struct PhotoEditorView: View {
                     .disabled(shapes.isEmpty)
                 }
             }
-            .sheet(isPresented: $showLabelInput) {
-                LabelInputSheet(text: $labelText)
+            .sheet(isPresented: $showLabelSheet) {
+                LabelTemplateSheet(store: store)
             }
         }
     }
@@ -135,7 +163,7 @@ struct PhotoEditorView: View {
                 }
             }
 
-            if !labelText.isEmpty {
+            if !store.selected.isEmpty {
                 let attrs: [NSAttributedString.Key: Any] = [
                     .font: UIFont.systemFont(ofSize: imageSize.width * 0.03, weight: .semibold),
                     .foregroundColor: UIColor.white,
@@ -143,10 +171,10 @@ struct PhotoEditorView: View {
                     .strokeWidth: -2.5
                 ]
                 let margin: CGFloat = 16
-                let size = (labelText as NSString).size(withAttributes: attrs)
+                let size = (store.selected as NSString).size(withAttributes: attrs)
                 let pt = CGPoint(x: imageSize.width - size.width - margin,
                                  y: imageSize.height - size.height - margin)
-                (labelText as NSString).draw(at: pt, withAttributes: attrs)
+                (store.selected as NSString).draw(at: pt, withAttributes: attrs)
             }
         }
         onSave(result)
@@ -173,19 +201,86 @@ struct PhotoEditorView: View {
     }
 }
 
-struct LabelInputSheet: View {
-    @Binding var text: String
+// MARK: - Шаблоны подписей
+struct LabelTemplateSheet: View {
+    @ObservedObject var store: LabelTemplatesStore
     @Environment(\.dismiss) var dismiss
+    @State private var newTemplate: String = ""
+    @State private var showInput = false
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                TextField("Введите метку...", text: $text)
-                    .textFieldStyle(.roundedBorder)
-                    .padding()
-                Spacer()
+            List {
+                // Активный шаблон
+                if !store.selected.isEmpty {
+                    Section("Активный") {
+                        HStack {
+                            Text(store.selected)
+                            Spacer()
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.orange)
+                        }
+                        Button("Отключить подпись") {
+                            store.selected = ""
+                            dismiss()
+                        }
+                        .foregroundColor(.red)
+                    }
+                }
+
+                // Список шаблонов
+                Section("Шаблоны") {
+                    ForEach(store.templates, id: \.self) { template in
+                        Button {
+                            store.selected = template
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Text(template)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                if store.selected == template {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.orange)
+                                }
+                            }
+                        }
+                    }
+                    .onDelete { idx in
+                        store.templates.remove(atOffsets: idx)
+                        if !store.templates.contains(store.selected) {
+                            store.selected = ""
+                        }
+                    }
+                }
+
+                // Добавить новый
+                Section {
+                    if showInput {
+                        HStack {
+                            TextField("Введите подпись...", text: $newTemplate)
+                            Button("Добавить") {
+                                let t = newTemplate.trimmingCharacters(in: .whitespaces)
+                                if !t.isEmpty {
+                                    store.templates.append(t)
+                                    store.selected = t
+                                    newTemplate = ""
+                                    showInput = false
+                                    dismiss()
+                                }
+                            }
+                            .foregroundColor(.orange)
+                        }
+                    } else {
+                        Button {
+                            showInput = true
+                        } label: {
+                            Label("Добавить шаблон", systemImage: "plus")
+                        }
+                    }
+                }
             }
-            .navigationTitle("Текстовая метка")
+            .navigationTitle("Подписи")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Готово") { dismiss() }
