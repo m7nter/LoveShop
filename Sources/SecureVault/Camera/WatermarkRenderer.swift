@@ -6,13 +6,16 @@ struct WatermarkRenderer {
                       location: CLLocation?,
                       heading: CLHeading?,
                       labelText: String? = nil) -> UIImage {
-        let size = image.size
-        let scale = image.scale
+
+        // Фиксируем ориентацию
+        let fixedImage = image.fixedOrientation()
+        let size = fixedImage.size
+        let scale = fixedImage.scale
 
         UIGraphicsBeginImageContextWithOptions(size, false, scale)
         defer { UIGraphicsEndImageContext() }
 
-        image.draw(at: .zero)
+        fixedImage.draw(at: .zero)
 
         let padding: CGFloat = size.width * 0.03
         let font = UIFont.monospacedSystemFont(ofSize: max(size.width * 0.028, 16), weight: .semibold)
@@ -38,7 +41,6 @@ struct WatermarkRenderer {
         UIColor.black.withAlphaComponent(0.55).setFill()
         UIRectFill(CGRect(x: 0, y: 0, width: size.width, height: topBarH))
 
-        // Иконка + координаты
         let pinConfig = UIImage.SymbolConfiguration(pointSize: max(size.width * 0.025, 14))
         if let pinImg = UIImage(systemName: "mappin", withConfiguration: pinConfig)?
             .withTintColor(.white, renderingMode: .alwaysOriginal) {
@@ -52,25 +54,23 @@ struct WatermarkRenderer {
             (topText as NSString).draw(in: coordRect, withAttributes: attrs)
         }
 
-        // Точность + точка
         if !accuracyText.isEmpty {
             let dotSize: CGFloat = max(size.width * 0.018, 12)
             let dotX = size.width - dotSize - padding / 2
             let dotY = (topBarH - dotSize) / 2
             let isAccurate = location != nil && location!.horizontalAccuracy < 15
             (isAccurate ? UIColor.green : UIColor.yellow).setFill()
-            UIBezierPath(ovalIn: CGRect(x: dotX, y: dotY, width: dotSize, height: dotSize)).fill()
-
-            let accAttrs = attrs
-            let accSize = (accuracyText as NSString).size(withAttributes: accAttrs)
+            UIBezierPath(ovalIn: CGRect(x: dotX, y: dotY,
+                                        width: dotSize, height: dotSize)).fill()
+            let accSize = (accuracyText as NSString).size(withAttributes: attrs)
             let accRect = CGRect(x: dotX - accSize.width - 8,
                                  y: (topBarH - lineHeight) / 2,
                                  width: accSize.width,
                                  height: lineHeight)
-            (accuracyText as NSString).draw(in: accRect, withAttributes: accAttrs)
+            (accuracyText as NSString).draw(in: accRect, withAttributes: attrs)
         }
 
-        // ── НИЖНЯЯ ЧАСТЬ: подпись + аватар ──
+        // ── НИЖНЯЯ ЧАСТЬ ──
         let hasLabel = !(labelText ?? "").isEmpty
         let avatarImg = SettingsStore.shared.avatarImage
         let avatarSize: CGFloat = size.width * 0.22
@@ -83,7 +83,6 @@ struct WatermarkRenderer {
                               width: size.width,
                               height: bottomBarH))
 
-            // Подпись слева снизу
             if let label = labelText, !label.isEmpty {
                 let labelFont = UIFont.systemFont(ofSize: max(size.width * 0.03, 18), weight: .bold)
                 let labelAttrs: [NSAttributedString.Key: Any] = [
@@ -99,7 +98,6 @@ struct WatermarkRenderer {
                 (label as NSString).draw(in: labelRect, withAttributes: labelAttrs)
             }
 
-            // Аватар в правом нижнем углу ПРЯМО НА ФОТО
             if let avatar = avatarImg {
                 let avatarRect = CGRect(
                     x: size.width - avatarSize - padding,
@@ -114,5 +112,16 @@ struct WatermarkRenderer {
         }
 
         return UIGraphicsGetImageFromCurrentImageContext() ?? image
+    }
+}
+
+extension UIImage {
+    func fixedOrientation() -> UIImage {
+        if imageOrientation == .up { return self }
+        UIGraphicsBeginImageContextWithOptions(size, false, scale)
+        draw(in: CGRect(origin: .zero, size: size))
+        let result = UIGraphicsGetImageFromCurrentImageContext() ?? self
+        UIGraphicsEndImageContext()
+        return result
     }
 }
