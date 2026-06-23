@@ -7,9 +7,19 @@ class SettingsStore: ObservableObject {
         didSet { saveAvatar() }
     }
 
+    @Published var showCrosshair: Bool {
+        didSet { UserDefaults.standard.set(showCrosshair, forKey: "showCrosshair") }
+    }
+
+    @Published var crosshairColor: String {
+        didSet { UserDefaults.standard.set(crosshairColor, forKey: "crosshairColor") }
+    }
+
     private let avatarKey = "userAvatar"
 
     init() {
+        showCrosshair = UserDefaults.standard.bool(forKey: "showCrosshair")
+        crosshairColor = UserDefaults.standard.string(forKey: "crosshairColor") ?? "white"
         loadAvatar()
     }
 
