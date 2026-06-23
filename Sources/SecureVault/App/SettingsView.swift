@@ -4,6 +4,7 @@ struct SettingsView: View {
     @ObservedObject private var store = SettingsStore.shared
     @Environment(\.dismiss) var dismiss
     @State private var showPicker = false
+    @State private var crashLog: String = ""
 
     var body: some View {
         NavigationView {
@@ -43,6 +44,19 @@ struct SettingsView: View {
                     .padding(.vertical, 4)
                 }
 
+                Section("Диагностика") {
+                    Button("Копировать лог краша") {
+                        UIPasteboard.general.string = crashLog.isEmpty ? "Логов нет" : crashLog
+                    }
+                    .foregroundColor(.orange)
+
+                    if !crashLog.isEmpty {
+                        Text(crashLog)
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.secondary)
+                    }
+                }
+
                 Section("Подсказка") {
                     Text("Фото отображается в правом нижнем углу каждого снимка")
                         .font(.caption)
@@ -58,47 +72,21 @@ struct SettingsView: View {
                 }
             }
         }
+        .onAppear {
+            loadCrashLog()
+        }
         .sheet(isPresented: $showPicker) {
             ImagePicker { img in
                 store.avatarImage = img
             }
         }
     }
-}
 
-struct ImagePicker: UIViewControllerRepresentable {
-    let onSelect: (UIImage) -> Void
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onSelect: onSelect)
-    }
-
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .photoLibrary
-        picker.delegate = context.coordinator
-        return picker
-    }
-
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let onSelect: (UIImage) -> Void
-
-        init(onSelect: @escaping (UIImage) -> Void) {
-            self.onSelect = onSelect
-        }
-
-        func imagePickerController(_ picker: UIImagePickerController,
-                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            if let img = info[.originalImage] as? UIImage {
-                onSelect(img)
-            }
-            picker.dismiss(animated: true)
-        }
-
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true)
+    private func loadCrashLog() {
+        let paths = NSSearchPathForDirectoriesInDomains(.cachesDirectory, .userDomainMask, true)
+        if let cachePath = paths.first {
+            let logPath = cachePath + "/crash.log"
+            crashLog = (try? String(contentsOfFile: logPath)) ?? "Логов нет"
         }
     }
 }
