@@ -4,7 +4,6 @@ struct SettingsView: View {
     @ObservedObject private var store = SettingsStore.shared
     @Environment(\.dismiss) var dismiss
     @State private var showPicker = false
-    @State private var crashLog: String = ""
 
     var body: some View {
         NavigationView {
@@ -44,16 +43,26 @@ struct SettingsView: View {
                     .padding(.vertical, 4)
                 }
 
-                Section("Диагностика") {
-                    Button("Копировать лог краша") {
-                        UIPasteboard.general.string = crashLog.isEmpty ? "Логов нет" : crashLog
-                    }
-                    .foregroundColor(.orange)
+                Section("Прицел") {
+                    Toggle("Показывать перекрестие", isOn: $store.showCrosshair)
+                        .tint(.orange)
 
-                    if !crashLog.isEmpty {
-                        Text(crashLog)
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundColor(.secondary)
+                    if store.showCrosshair {
+                        HStack {
+                            Text("Цвет")
+                            Spacer()
+                            ForEach(["white", "red", "green", "yellow"], id: \.self) { colorName in
+                                Circle()
+                                    .fill(color(for: colorName))
+                                    .frame(width: 28, height: 28)
+                                    .overlay(
+                                        Circle().stroke(Color.white, lineWidth: store.crosshairColor == colorName ? 2 : 0)
+                                    )
+                                    .onTapGesture {
+                                        store.crosshairColor = colorName
+                                    }
+                            }
+                        }
                     }
                 }
 
@@ -72,9 +81,6 @@ struct SettingsView: View {
                 }
             }
         }
-        .onAppear {
-            loadCrashLog()
-        }
         .sheet(isPresented: $showPicker) {
             ImagePicker { img in
                 store.avatarImage = img
@@ -82,11 +88,12 @@ struct SettingsView: View {
         }
     }
 
-    private func loadCrashLog() {
-        let paths = NSSearchPathForDirectoriesInDomains(.cachesDirectory, .userDomainMask, true)
-        if let cachePath = paths.first {
-            let logPath = cachePath + "/crash.log"
-            crashLog = (try? String(contentsOfFile: logPath)) ?? "Логов нет"
+    private func color(for name: String) -> Color {
+        switch name {
+        case "red": return .red
+        case "green": return .green
+        case "yellow": return .yellow
+        default: return .white
         }
     }
 }
