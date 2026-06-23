@@ -46,7 +46,18 @@ struct PhotoEditorView: View {
                     }
                     .onAppear { canvasSize = geo.size }
                 }
-                
+
+                if !store.selected.isEmpty {
+                    VStack {
+                        Spacer()
+                        Text(store.selected)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                            .shadow(color: .black, radius: 2)
+                            .padding(.bottom, 60)
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Удалить") { onDiscard() }
@@ -150,20 +161,6 @@ struct PhotoEditorView: View {
                     break
                 }
             }
-
-            if !store.selected.isEmpty {
-                let attrs: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: imageSize.width * 0.03, weight: .semibold),
-                    .foregroundColor: UIColor.white,
-                    .strokeColor: UIColor.black,
-                    .strokeWidth: -2.5
-                ]
-                let margin: CGFloat = 16
-                let size = (store.selected as NSString).size(withAttributes: attrs)
-                let pt = CGPoint(x: imageSize.width - size.width - margin,
-                                 y: imageSize.height - size.height - margin)
-                (store.selected as NSString).draw(at: pt, withAttributes: attrs)
-            }
         }
         onSave(result)
     }
@@ -199,7 +196,6 @@ struct LabelTemplateSheet: View {
     var body: some View {
         NavigationView {
             List {
-                // Активный шаблон
                 if !store.selected.isEmpty {
                     Section("Активный") {
                         HStack {
@@ -216,7 +212,6 @@ struct LabelTemplateSheet: View {
                     }
                 }
 
-                // Список шаблонов
                 Section("Шаблоны") {
                     ForEach(store.templates, id: \.self) { template in
                         Button {
@@ -242,7 +237,6 @@ struct LabelTemplateSheet: View {
                     }
                 }
 
-                // Добавить новый
                 Section {
                     if showInput {
                         HStack {
