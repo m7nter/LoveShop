@@ -10,7 +10,6 @@ struct GalleryEditorView: View {
     @State private var selectedTool: DrawingTool = .arrow
     @State private var selectedColor: Color = .red
     @State private var canvasSize: CGSize = .zero
-    @State private var isSaving = false
 
     var body: some View {
         NavigationView {
@@ -29,24 +28,20 @@ struct GalleryEditorView: View {
                     }
                     .onAppear { canvasSize = geo.size }
                 }
-
-                if isSaving {
-                    Color.black.opacity(0.4).ignoresSafeArea()
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .scaleEffect(1.5)
-                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Отмена") { dismiss() }
                         .foregroundColor(.red)
-                        .disabled(isSaving)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Сохранить") { save() }
-                        .foregroundColor(.orange)
-                        .disabled(isSaving)
+                    Button("Сохранить") {
+                        dismiss()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            save()
+                        }
+                    }
+                    .foregroundColor(.orange)
                 }
                 ToolbarItemGroup(placement: .bottomBar) {
                     toolButton("arrow.up.right", tool: .arrow)
@@ -61,7 +56,7 @@ struct GalleryEditorView: View {
                         Image(systemName: "arrow.uturn.backward")
                             .foregroundColor(shapes.isEmpty ? .gray : .white)
                     }
-                    .disabled(shapes.isEmpty || isSaving)
+                    .disabled(shapes.isEmpty)
                 }
             }
         }
@@ -87,9 +82,6 @@ struct GalleryEditorView: View {
     }
 
     private func save() {
-        guard !isSaving else { return }
-        isSaving = true
-
         let imageSize = image.size
         let scaleX = canvasSize.width / imageSize.width
         let scaleY = canvasSize.height / imageSize.height
@@ -100,48 +92,39 @@ struct GalleryEditorView: View {
         let offsetY = (canvasSize.height - displayedSize.height) / 2
         let toImageX = imageSize.width / displayedSize.width
         let toImageY = imageSize.height / displayedSize.height
-        let shapesCopy = shapes
-        let imageCopy = image
-        let savingURL = url
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            let renderer = UIGraphicsImageRenderer(size: imageSize)
-            let result = renderer.image { ctx in
-                imageCopy.draw(at: .zero)
-                for shape in shapesCopy {
-                    let start = CGPoint(
-                        x: (shape.start.x - offsetX) * toImageX,
-                        y: (shape.start.y - offsetY) * toImageY)
-                    let end = CGPoint(
-                        x: (shape.end.x - offsetX) * toImageX,
-                        y: (shape.end.y - offsetY) * toImageY)
-                    let uiColor = UIColor(shape.color)
-                    let lineWidth: CGFloat = 2.5 * toImageX
-                    switch shape.tool {
-                    case .arrow:
-                        drawArrow(ctx: ctx.cgContext, from: start, to: end,
-                                  color: uiColor, lineWidth: lineWidth)
-                    case .oval:
-                        let rect = CGRect(
-                            x: min(start.x, end.x), y: min(start.y, end.y),
-                            width: abs(end.x - start.x), height: abs(end.y - start.y))
-                        ctx.cgContext.setStrokeColor(uiColor.cgColor)
-                        ctx.cgContext.setLineWidth(lineWidth)
-                        ctx.cgContext.strokeEllipse(in: rect)
-                    case .text: break
-                    }
+        let renderer = UIGraphicsImageRenderer(size: imageSize)
+        let result = renderer.image { ctx in
+            image.draw(at: .zero)
+            for shape in shapes {
+                let start = CGPoint(
+                    x: (shape.start.x - offsetX) * toImageX,
+                    y: (shape.start.y - offsetY) * toImageY)
+                let end = CGPoint(
+                    x: (shape.end.x - offsetX) * toImageX,
+                    y: (shape.end.y - offsetY) * toImageY)
+                let uiColor = UIColor(shape.color)
+                let lineWidth: CGFloat = 2.5 * toImageX
+                switch shape.tool {
+                case .arrow:
+                    drawArrow(ctx: ctx.cgContext, from: start, to: end,
+                              color: uiColor, lineWidth: lineWidth)
+                case .oval:
+                    let rect = CGRect(
+                        x: min(start.x, end.x), y: min(start.y, end.y),
+                        width: abs(end.x - start.x), height: abs(end.y - start.y))
+                    ctx.cgContext.setStrokeColor(uiColor.cgColor)
+                    ctx.cgContext.setLineWidth(lineWidth)
+                    ctx.cgContext.strokeEllipse(in: rect)
+                case .text: break
                 }
             }
-
-            if let data = result.jpegData(compressionQuality: 0.92) {
-                try? data.write(to: savingURL)
-            }
-
-            DispatchQueue.main.async {
-                onSaved(result)
-                dismiss()
-            }
         }
+
+        if let data = result.jpegData(compressionQuality: 0.92) {
+            try? data.write(to: url)
+        }
+        onSaved(result)
     }
 
     private func drawArrow(ctx: CGContext, from start: CGPoint, to end: CGPoint,
