@@ -53,17 +53,24 @@ struct PhotoDetailView: View {
             }
         }
         .onAppear {
-            currentImage = loadImage()
+            DispatchQueue.global(qos: .userInitiated).async {
+                let img = loadImage()
+                DispatchQueue.main.async {
+                    currentImage = img
+                }
+            }
         }
         .fullScreenCover(isPresented: $showEditor) {
             if let img = currentImage {
                 PhotoEditorView(image: img) { edited in
                     showEditor = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        if let data = edited.jpegData(compressionQuality: 0.95) {
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        if let data = edited.jpegData(compressionQuality: 0.9) {
                             try? data.write(to: url)
                         }
-                        currentImage = edited
+                        DispatchQueue.main.async {
+                            currentImage = edited
+                        }
                     }
                 } onDiscard: {
                     showEditor = false
