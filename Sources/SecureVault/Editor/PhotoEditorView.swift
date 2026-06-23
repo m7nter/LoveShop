@@ -27,6 +27,7 @@ struct PhotoEditorView: View {
     @State private var selectedColor: Color = .red
     @State private var showLabelSheet = false
     @State private var canvasSize: CGSize = .zero
+    @State private var isSaving = false
 
     var body: some View {
         NavigationView {
@@ -57,15 +58,24 @@ struct PhotoEditorView: View {
                             .padding(.bottom, 60)
                     }
                 }
+
+                if isSaving {
+                    Color.black.opacity(0.4).ignoresSafeArea()
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.5)
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Удалить") { onDiscard() }
                         .foregroundColor(.red)
+                        .disabled(isSaving)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Сохранить") { saveComposed() }
                         .foregroundColor(.orange)
+                        .disabled(isSaving)
                 }
                 ToolbarItemGroup(placement: .bottomBar) {
                     toolButton("arrow.up.right", tool: .arrow)
@@ -87,7 +97,7 @@ struct PhotoEditorView: View {
                         Image(systemName: "arrow.uturn.backward")
                             .foregroundColor(shapes.isEmpty ? .gray : .white)
                     }
-                    .disabled(shapes.isEmpty)
+                    .disabled(shapes.isEmpty || isSaving)
                 }
             }
             .sheet(isPresented: $showLabelSheet) {
@@ -118,6 +128,9 @@ struct PhotoEditorView: View {
     }
 
     private func saveComposed() {
+        guard !isSaving else { return }
+        isSaving = true
+
         let imageSize = image.size
         let scaleX = canvasSize.width / imageSize.width
         let scaleY = canvasSize.height / imageSize.height
@@ -128,41 +141,49 @@ struct PhotoEditorView: View {
         let offsetY = (canvasSize.height - displayedSize.height) / 2
         let toImageX = imageSize.width / displayedSize.width
         let toImageY = imageSize.height / displayedSize.height
+        let shapesCopy = shapes
+        let imageCopy = image
 
-        let renderer = UIGraphicsImageRenderer(size: imageSize)
-        let result = renderer.image { ctx in
-            image.draw(at: .zero)
+        DispatchQueue.global(qos: .userInitiated).async {
+            let renderer = UIGraphicsImageRenderer(size: imageSize)
+            let result = renderer.image { ctx in
+                imageCopy.draw(at: .zero)
 
-            for shape in shapes {
-                let start = CGPoint(
-                    x: (shape.start.x - offsetX) * toImageX,
-                    y: (shape.start.y - offsetY) * toImageY
-                )
-                let end = CGPoint(
-                    x: (shape.end.x - offsetX) * toImageX,
-                    y: (shape.end.y - offsetY) * toImageY
-                )
-                let uiColor = UIColor(shape.color)
-                let lineWidth: CGFloat = 2.5 * toImageX
-
-                switch shape.tool {
-                case .arrow:
-                    drawArrowCG(ctx: ctx.cgContext, from: start, to: end,
-                                color: uiColor, lineWidth: lineWidth)
-                case .oval:
-                    let rect = CGRect(
-                        x: min(start.x, end.x), y: min(start.y, end.y),
-                        width: abs(end.x - start.x), height: abs(end.y - start.y)
+                for shape in shapesCopy {
+                    let start = CGPoint(
+                        x: (shape.start.x - offsetX) * toImageX,
+                        y: (shape.start.y - offsetY) * toImageY
                     )
-                    ctx.cgContext.setStrokeColor(uiColor.cgColor)
-                    ctx.cgContext.setLineWidth(lineWidth)
-                    ctx.cgContext.strokeEllipse(in: rect)
-                case .text:
-                    break
+                    let end = CGPoint(
+                        x: (shape.end.x - offsetX) * toImageX,
+                        y: (shape.end.y - offsetY) * toImageY
+                    )
+                    let uiColor = UIColor(shape.color)
+                    let lineWidth: CGFloat = 2.5 * toImageX
+
+                    switch shape.tool {
+                    case .arrow:
+                        drawArrowCG(ctx: ctx.cgContext, from: start, to: end,
+                                    color: uiColor, lineWidth: lineWidth)
+                    case .oval:
+                        let rect = CGRect(
+                            x: min(start.x, end.x), y: min(start.y, end.y),
+                            width: abs(end.x - start.x), height: abs(end.y - start.y)
+                        )
+                        ctx.cgContext.setStrokeColor(uiColor.cgColor)
+                        ctx.cgContext.setLineWidth(lineWidth)
+                        ctx.cgContext.strokeEllipse(in: rect)
+                    case .text:
+                        break
+                    }
                 }
             }
+
+            DispatchQueue.main.async {
+                isSaving = false
+                onSave(result)
+            }
         }
-        onSave(result)
     }
 
     private func drawArrowCG(ctx: CGContext, from start: CGPoint, to end: CGPoint,
