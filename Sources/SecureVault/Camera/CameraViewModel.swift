@@ -63,7 +63,7 @@ extension CameraViewModel: AVCapturePhotoCaptureDelegate {
 
         let loc = LocationManager.shared.location
         let hdg = LocationManager.shared.heading
-        let label = LabelTemplatesStore().selected.isEmpty ? nil : LabelTemplatesStore().selected
+        let label = UserDefaults.standard.string(forKey: "selectedTemplate").flatMap { $0.isEmpty ? nil : $0 }
         let watermarked = WatermarkRenderer.apply(to: img, location: loc, heading: hdg, labelText: label)
         DispatchQueue.main.async { self.completion?(watermarked) }
     }
