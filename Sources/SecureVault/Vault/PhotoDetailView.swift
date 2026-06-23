@@ -6,7 +6,6 @@ struct PhotoDetailView: View {
     @Environment(\.dismiss) var dismiss
     @State private var showEditor = false
     @State private var currentImage: UIImage?
-    @State private var editedImage: UIImage?
 
     var body: some View {
         ZStack {
@@ -56,21 +55,16 @@ struct PhotoDetailView: View {
         .onAppear {
             currentImage = loadImage()
         }
-        .onChange(of: showEditor) { isShowing in
-            if !isShowing, let edited = editedImage {
-                currentImage = edited
-                editedImage = nil
-            }
-        }
-        .fullScreenCover(isPresented: $showEditor) {
+        .sheet(isPresented: $showEditor) {
             if let img = currentImage {
                 PhotoEditorView(image: img) { edited in
-                    // Сохраняем файл
-                    if let data = edited.jpegData(compressionQuality: 0.92) {
-                        try? data.write(to: url)
-                    }
-                    editedImage = edited
                     showEditor = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        if let data = edited.jpegData(compressionQuality: 0.92) {
+                            try? data.write(to: url)
+                        }
+                        currentImage = edited
+                    }
                 } onDiscard: {
                     showEditor = false
                 }
