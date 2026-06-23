@@ -10,7 +10,7 @@ struct PhotoDetailView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            if let img = currentImage ?? loadImage() {
+            if let img = currentImage {
                 Image(uiImage: img)
                     .resizable()
                     .scaledToFit()
@@ -26,12 +26,8 @@ struct PhotoDetailView: View {
                         .cornerRadius(8)
                     Spacer()
                     HStack(spacing: 12) {
-                        // Кнопка редактирования
                         Button {
-                            if let img = currentImage ?? loadImage() {
-                                currentImage = img
-                                showEditor = true
-                            }
+                            showEditor = true
                         } label: {
                             Image(systemName: "pencil")
                                 .foregroundColor(.white)
@@ -39,7 +35,6 @@ struct PhotoDetailView: View {
                                 .background(Color.black.opacity(0.5))
                                 .clipShape(Circle())
                         }
-
                         Button {
                             onDelete()
                             dismiss()
@@ -63,12 +58,13 @@ struct PhotoDetailView: View {
         .fullScreenCover(isPresented: $showEditor) {
             if let img = currentImage {
                 PhotoEditorView(image: img) { edited in
-                    // Перезаписываем файл
-                    if let data = edited.jpegData(compressionQuality: 0.95) {
-                        try? data.write(to: url)
-                    }
-                    currentImage = edited
                     showEditor = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        if let data = edited.jpegData(compressionQuality: 0.95) {
+                            try? data.write(to: url)
+                        }
+                        currentImage = edited
+                    }
                 } onDiscard: {
                     showEditor = false
                 }
