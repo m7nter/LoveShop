@@ -26,9 +26,7 @@ struct PhotoDetailView: View {
                         .cornerRadius(8)
                     Spacer()
                     HStack(spacing: 12) {
-                        Button {
-                            showEditor = true
-                        } label: {
+                        Button { showEditor = true } label: {
                             Image(systemName: "pencil")
                                 .foregroundColor(.white)
                                 .padding(10)
@@ -52,21 +50,11 @@ struct PhotoDetailView: View {
                 Spacer()
             }
         }
-        .onAppear {
-            currentImage = loadImage()
-        }
+        .onAppear { currentImage = loadImage() }
         .sheet(isPresented: $showEditor) {
             if let img = currentImage {
-                PhotoEditorView(image: img) { edited in
-                    showEditor = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        if let data = edited.jpegData(compressionQuality: 0.92) {
-                            try? data.write(to: url)
-                        }
-                        currentImage = edited
-                    }
-                } onDiscard: {
-                    showEditor = false
+                GalleryEditorView(image: img, url: url) { edited in
+                    currentImage = edited
                 }
             }
         }
