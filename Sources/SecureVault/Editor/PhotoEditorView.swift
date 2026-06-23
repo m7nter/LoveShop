@@ -46,19 +46,7 @@ struct PhotoEditorView: View {
                     }
                     .onAppear { canvasSize = geo.size }
                 }
-
-                // Показываем активный шаблон снизу
-                if !store.selected.isEmpty {
-                    VStack {
-                        Spacer()
-                        Text(store.selected)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white)
-                            .shadow(color: .black, radius: 2)
-                            .padding(.bottom, 60)
-                    }
-                }
-            }
+                
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Удалить") { onDiscard() }
