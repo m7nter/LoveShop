@@ -9,11 +9,50 @@ struct PhotoDetailView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             if let data = try? Data(contentsOf: url), let img = UIImage(data: data) {
-                Image(uiImage: img)
-                    .resizable()
-                    .scaledToFit()
-                    .ignoresSafeArea()
+                GeometryReader { geo in
+                    let imageSize = img.size
+                    let scaleX = geo.size.width / imageSize.width
+                    let scaleY = geo.size.height / imageSize.height
+                    let scale = min(scaleX, scaleY)
+                    let displayedH = imageSize.height * scale
+                    let displayedW = imageSize.width * scale
+                    let offsetX = (geo.size.width - displayedW) / 2
+                    let offsetY = (geo.size.height - displayedH) / 2
+
+                    ZStack(alignment: .topLeading) {
+                        Image(uiImage: img)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: geo.size.width, height: geo.size.height)
+
+                        // Подпись в левом нижнем углу фото
+                        let label = LabelTemplatesStore().selected
+                        if !label.isEmpty {
+                            Text(label)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.black.opacity(0.55))
+                                .cornerRadius(6)
+                                .offset(x: offsetX + 12,
+                                        y: offsetY + displayedH - 44)
+                        }
+
+                        // Аватар в правом нижнем углу фото
+                        if let avatar = SettingsStore.shared.avatarImage {
+                            Image(uiImage: avatar)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 72, height: 72)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .offset(x: offsetX + displayedW - 84,
+                                        y: offsetY + displayedH - 84)
+                        }
+                    }
+                }
             }
+
             VStack {
                 HStack {
                     Button("Закрыть") { dismiss() }
