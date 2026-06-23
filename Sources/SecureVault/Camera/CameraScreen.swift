@@ -6,11 +6,17 @@ struct CameraScreen: View {
     let onCapture: (UIImage) -> Void
     @Environment(\.dismiss) var dismiss
     @ObservedObject private var locationManager = LocationManager.shared
+    @ObservedObject private var settings = SettingsStore.shared
 
     var body: some View {
         ZStack {
             CameraView(session: cameraVM.session)
                 .ignoresSafeArea()
+
+            // Перекрестие
+            if settings.showCrosshair {
+                CrosshairView(color: settings.crosshairColor)
+            }
 
             VStack(spacing: 0) {
                 // Верхняя панель — координаты
@@ -35,7 +41,6 @@ struct CameraScreen: View {
                         }
                     }
                     Spacer()
-                    // Точность GPS
                     if let loc = locationManager.location {
                         HStack(spacing: 4) {
                             Text("±\(Int(loc.horizontalAccuracy))м")
@@ -53,11 +58,8 @@ struct CameraScreen: View {
 
                 Spacer()
 
-                // Нижняя панель
                 VStack(spacing: 16) {
-                    // Кнопки управления
                     HStack(spacing: 40) {
-                        // Фонарик
                         Button {
                             cameraVM.toggleTorch()
                         } label: {
@@ -69,7 +71,6 @@ struct CameraScreen: View {
                                 .clipShape(Circle())
                         }
 
-                        // Кнопка съёмки
                         Button {
                             cameraVM.capturePhoto { img in
                                 onCapture(img)
@@ -81,7 +82,6 @@ struct CameraScreen: View {
                                 .overlay(Circle().fill(.white).frame(width: 60, height: 60))
                         }
 
-                        // Быстрый режим
                         Button {
                             cameraVM.quickMode.toggle()
                         } label: {
@@ -94,7 +94,6 @@ struct CameraScreen: View {
                         }
                     }
 
-                    // Подпись активного шаблона
                     HStack {
                         Button("Отмена") { dismiss() }
                             .foregroundColor(.white.opacity(0.8))
