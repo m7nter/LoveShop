@@ -1,4 +1,3 @@
-// CalculatorViewModel.swift
 import Foundation
 import Combine
 
@@ -10,7 +9,6 @@ class CalculatorViewModel: ObservableObject {
     private var storedValue: Double = 0
     private var currentOperator: String? = nil
     private var shouldResetDisplay = false
-    private let secretCode = "2026"
 
     func tap(_ symbol: String) {
         switch symbol {
@@ -56,8 +54,21 @@ class CalculatorViewModel: ObservableObject {
     }
 
     private func handleEquals() {
-        // Check secret code BEFORE computing
-        if currentInput == secretCode || display == secretCode {
+        let store = SettingsStore.shared
+        let input = currentInput.isEmpty ? display : currentInput
+
+        // Пароль-камикадзе — удаляем все фото
+        if store.kamikazeCodeEnabled && !store.kamikazeCode.isEmpty && input == store.kamikazeCode {
+            let urls = FileStorageManager.shared.loadAll()
+            for url in urls {
+                FileStorageManager.shared.delete(url: url)
+            }
+            reset()
+            return
+        }
+
+        // Основной пароль
+        if input == store.mainCode {
             shouldUnlock = true
             reset()
             return
