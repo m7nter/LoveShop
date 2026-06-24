@@ -3,6 +3,8 @@ import SwiftUI
 @main
 struct SecureVaultApp: App {
     @State private var isUnlocked = false
+    @State private var lastActiveTime = Date()
+    @Environment(\.scenePhase) var scenePhase
 
     init() {
         setupCrashLogging()
@@ -14,11 +16,36 @@ struct SecureVaultApp: App {
                 VaultView(onLock: {
                     isUnlocked = false
                 })
+                .onReceive(NotificationCenter.default.publisher(
+                    for: UIApplication.userDidTakeScreenshotNotification)
+                ) { _ in
+                    lastActiveTime = Date()
+                }
             } else {
                 CalculatorView(onUnlock: {
                     isUnlocked = true
+                    lastActiveTime = Date()
                 })
             }
+        }
+        .onChange(of: scenePhase) { phase in
+            switch phase {
+            case .active:
+                checkAutoLock()
+            case .background, .inactive:
+                lastActiveTime = Date()
+            default:
+                break
+            }
+        }
+    }
+
+    private func checkAutoLock() {
+        let timeout = SettingsStore.shared.autoLockTimeout
+        guard timeout > 0, isUnlocked else { return }
+        let elapsed = Date().timeIntervalSince(lastActiveTime)
+        if elapsed >= Double(timeout) {
+            isUnlocked = false
         }
     }
 
