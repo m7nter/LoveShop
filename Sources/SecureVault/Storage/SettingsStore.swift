@@ -19,12 +19,17 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(crosshairOnPhoto, forKey: "crosshairOnPhoto") }
     }
 
+    @Published var autoLockTimeout: Int {
+        didSet { UserDefaults.standard.set(autoLockTimeout, forKey: "autoLockTimeout") }
+    }
+
     private let avatarKey = "userAvatar"
 
     init() {
         showCrosshair = UserDefaults.standard.bool(forKey: "showCrosshair")
         crosshairColor = UserDefaults.standard.string(forKey: "crosshairColor") ?? "white"
         crosshairOnPhoto = UserDefaults.standard.bool(forKey: "crosshairOnPhoto")
+        autoLockTimeout = UserDefaults.standard.integer(forKey: "autoLockTimeout")
         loadAvatar()
     }
 
