@@ -4,8 +4,6 @@ struct SettingsView: View {
     @ObservedObject private var store = SettingsStore.shared
     @Environment(\.dismiss) var dismiss
     @State private var showPicker = false
-
-    // Пароли
     @State private var showChangeMain = false
     @State private var showChangeVault = false
     @State private var showChangeKamikaze = false
@@ -45,6 +43,8 @@ struct SettingsView: View {
                 Section("Прицел") {
                     Toggle("Показывать перекрестие", isOn: $store.showCrosshair)
                         .tint(.orange)
+                    Toggle("Перекрестие на фото", isOn: $store.crosshairOnPhoto)
+                        .tint(.orange)
                     if store.showCrosshair {
                         HStack {
                             Text("Цвет")
@@ -64,46 +64,33 @@ struct SettingsView: View {
                 }
 
                 Section("Безопасность") {
-                    Button("Изменить основной пароль") {
-                        showChangeMain = true
-                    }
-                    .foregroundColor(.orange)
+                    Button("Изменить основной пароль") { showChangeMain = true }
+                        .foregroundColor(.orange)
 
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Пароль хранилища")
                             Text(store.vaultCodeEnabled ? "Включён" : "Выключен")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .font(.caption).foregroundColor(.secondary)
                         }
                         Spacer()
                         Toggle("", isOn: Binding(
                             get: { store.vaultCodeEnabled },
                             set: {
-                                if $0 && store.vaultCode.isEmpty {
-                                    showChangeVault = true
-                                } else {
-                                    store.vaultCodeEnabled = $0
-                                }
+                                if $0 && store.vaultCode.isEmpty { showChangeVault = true }
+                                else { store.vaultCodeEnabled = $0 }
                             }
-                        ))
-                        .tint(.orange)
-                        .labelsHidden()
+                        )).tint(.orange).labelsHidden()
                     }
-
                     if store.vaultCodeEnabled {
-                        Button("Изменить пароль хранилища") {
-                            showChangeVault = true
-                        }
-                        .foregroundColor(.orange)
+                        Button("Изменить пароль хранилища") { showChangeVault = true }
+                            .foregroundColor(.orange)
                     }
 
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Пароль-камикадзе")
-                            Text(store.kamikazeCodeEnabled
-                                 ? "При вводе удалит все фото"
-                                 : "Выключен")
+                            Text(store.kamikazeCodeEnabled ? "При вводе удалит все фото" : "Выключен")
                                 .font(.caption)
                                 .foregroundColor(store.kamikazeCodeEnabled ? .red : .secondary)
                         }
@@ -111,37 +98,27 @@ struct SettingsView: View {
                         Toggle("", isOn: Binding(
                             get: { store.kamikazeCodeEnabled },
                             set: {
-                                if $0 && store.kamikazeCode.isEmpty {
-                                    showChangeKamikaze = true
-                                } else {
-                                    store.kamikazeCodeEnabled = $0
-                                }
+                                if $0 && store.kamikazeCode.isEmpty { showChangeKamikaze = true }
+                                else { store.kamikazeCodeEnabled = $0 }
                             }
-                        ))
-                        .tint(.red)
-                        .labelsHidden()
+                        )).tint(.red).labelsHidden()
                     }
-
                     if store.kamikazeCodeEnabled {
-                        Button("Изменить пароль-камикадзе") {
-                            showChangeKamikaze = true
-                        }
-                        .foregroundColor(.red)
+                        Button("Изменить пароль-камикадзе") { showChangeKamikaze = true }
+                            .foregroundColor(.red)
                     }
                 }
 
                 Section("Подсказка") {
                     Text("Фото отображается в правом нижнем углу каждого снимка")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.caption).foregroundColor(.secondary)
                 }
             }
             .navigationTitle("Настройки")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Готово") { dismiss() }
-                        .foregroundColor(.orange)
+                    Button("Готово") { dismiss() }.foregroundColor(.orange)
                 }
             }
         }
@@ -149,31 +126,19 @@ struct SettingsView: View {
             ImagePicker { img in store.avatarImage = img }
         }
         .sheet(isPresented: $showChangeMain) {
-            ChangeCodeView(
-                title: "Основной пароль",
-                currentCode: store.mainCode,
-                requireCurrent: true
-            ) { newCode in
-                store.mainCode = newCode
+            ChangeCodeView(title: "Основной пароль", currentCode: store.mainCode, requireCurrent: true) {
+                store.mainCode = $0
             }
         }
         .sheet(isPresented: $showChangeVault) {
-            ChangeCodeView(
-                title: "Пароль хранилища",
-                currentCode: store.vaultCode,
-                requireCurrent: !store.vaultCode.isEmpty
-            ) { newCode in
-                store.vaultCode = newCode
+            ChangeCodeView(title: "Пароль хранилища", currentCode: store.vaultCode, requireCurrent: !store.vaultCode.isEmpty) {
+                store.vaultCode = $0
                 store.vaultCodeEnabled = true
             }
         }
         .sheet(isPresented: $showChangeKamikaze) {
-            ChangeCodeView(
-                title: "Пароль-камикадзе",
-                currentCode: store.kamikazeCode,
-                requireCurrent: !store.kamikazeCode.isEmpty
-            ) { newCode in
-                store.kamikazeCode = newCode
+            ChangeCodeView(title: "Пароль-камикадзе", currentCode: store.kamikazeCode, requireCurrent: !store.kamikazeCode.isEmpty) {
+                store.kamikazeCode = $0
                 store.kamikazeCodeEnabled = true
             }
         }
@@ -210,19 +175,15 @@ struct ChangeCodeView: View {
                             .keyboardType(.numberPad)
                     }
                 }
-
                 Section("Новый пароль") {
                     SecureField("Введите новый пароль", text: $newCode)
                         .keyboardType(.numberPad)
                     SecureField("Повторите новый пароль", text: $confirmCode)
                         .keyboardType(.numberPad)
                 }
-
                 if !error.isEmpty {
                     Section {
-                        Text(error)
-                            .foregroundColor(.red)
-                            .font(.caption)
+                        Text(error).foregroundColor(.red).font(.caption)
                     }
                 }
             }
@@ -230,12 +191,10 @@ struct ChangeCodeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Отмена") { dismiss() }
-                        .foregroundColor(.red)
+                    Button("Отмена") { dismiss() }.foregroundColor(.red)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Сохранить") { save() }
-                        .foregroundColor(.orange)
+                    Button("Сохранить") { save() }.foregroundColor(.orange)
                 }
             }
         }
@@ -243,16 +202,13 @@ struct ChangeCodeView: View {
 
     private func save() {
         if requireCurrent && oldCode != currentCode {
-            error = "Неверный текущий пароль"
-            return
+            error = "Неверный текущий пароль"; return
         }
         if newCode.count < 4 {
-            error = "Пароль должен быть не менее 4 символов"
-            return
+            error = "Пароль должен быть не менее 4 символов"; return
         }
         if newCode != confirmCode {
-            error = "Пароли не совпадают"
-            return
+            error = "Пароли не совпадают"; return
         }
         onSave(newCode)
         dismiss()
