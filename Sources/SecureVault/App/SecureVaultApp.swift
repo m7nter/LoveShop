@@ -11,7 +11,9 @@ struct SecureVaultApp: App {
     var body: some Scene {
         WindowGroup {
             if isUnlocked {
-                VaultView()
+                VaultView(onLock: {
+                    isUnlocked = false
+                })
             } else {
                 CalculatorView(onUnlock: {
                     isUnlocked = true
