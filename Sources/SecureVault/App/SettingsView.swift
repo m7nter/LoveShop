@@ -25,18 +25,12 @@ struct SettingsView: View {
                                         .foregroundColor(.gray)
                                 )
                         }
-
                         VStack(alignment: .leading, spacing: 6) {
-                            Button("Выбрать фото") {
-                                showPicker = true
-                            }
-                            .foregroundColor(.orange)
-
+                            Button("Выбрать фото") { showPicker = true }
+                                .foregroundColor(.orange)
                             if store.avatarImage != nil {
-                                Button("Удалить") {
-                                    store.avatarImage = nil
-                                }
-                                .foregroundColor(.red)
+                                Button("Удалить") { store.avatarImage = nil }
+                                    .foregroundColor(.red)
                             }
                         }
                     }
@@ -58,12 +52,20 @@ struct SettingsView: View {
                                     .overlay(
                                         Circle().stroke(Color.white, lineWidth: store.crosshairColor == colorName ? 2 : 0)
                                     )
-                                    .onTapGesture {
-                                        store.crosshairColor = colorName
-                                    }
+                                    .onTapGesture { store.crosshairColor = colorName }
                             }
                         }
                     }
+                }
+
+                Section("Выгрузка фото") {
+                    Toggle("Отправлять одним альбомом", isOn: $store.shareAsAlbum)
+                        .tint(.orange)
+                    Text(store.shareAsAlbum
+                         ? "Все фото дня отправятся одним сообщением"
+                         : "Каждое фото отправляется отдельным сообщением")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
 
                 Section("Подсказка") {
@@ -82,9 +84,7 @@ struct SettingsView: View {
             }
         }
         .sheet(isPresented: $showPicker) {
-            ImagePicker { img in
-                store.avatarImage = img
-            }
+            ImagePicker { img in store.avatarImage = img }
         }
     }
 
