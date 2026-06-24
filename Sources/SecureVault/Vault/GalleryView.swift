@@ -5,6 +5,8 @@ struct GalleryView: View {
     @State private var groupedPhotos: [(String, [URL])] = []
     @State private var selectedURL: URL?
     @State private var showSettings = false
+    @State private var sharingItems: [Any]? = nil
+    @State private var showShareSheet = false
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 2)]
 
     var body: some View {
@@ -21,13 +23,23 @@ struct GalleryView: View {
                             }
                             .padding(.bottom, 8)
                         } header: {
-                            Text(day)
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.black.opacity(0.85))
+                            HStack {
+                                Text(day)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Button {
+                                    shareDay(urls: urls)
+                                } label: {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .foregroundColor(.orange)
+                                        .font(.system(size: 16))
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.black.opacity(0.85))
                         }
                     }
                 }
@@ -57,6 +69,24 @@ struct GalleryView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
+        .sheet(isPresented: $showShareSheet) {
+            if let items = sharingItems {
+                ShareSheet(items: items)
+            }
+        }
+    }
+
+    private func shareDay(urls: [URL]) {
+        var images: [UIImage] = []
+        for url in urls {
+            if let data = try? Data(contentsOf: url),
+               let img = UIImage(data: data) {
+                images.append(img)
+            }
+        }
+        guard !images.isEmpty else { return }
+        sharingItems = images
+        showShareSheet = true
     }
 
     private func reload() {
@@ -65,7 +95,6 @@ struct GalleryView: View {
         formatter.locale = Locale(identifier: "ru_RU")
         formatter.dateFormat = "d MMMM yyyy"
 
-        var groups: [(String, [URL])] = []
         var dict: [String: [URL]] = [:]
         var order: [String] = []
 
@@ -79,14 +108,23 @@ struct GalleryView: View {
             dict[key]?.append(url)
         }
 
-        groups = order.map { ($0, dict[$0] ?? []) }
-        groupedPhotos = groups
+        groupedPhotos = order.map { ($0, dict[$0] ?? []) }
     }
 
     private func delete(url: URL) {
         FileStorageManager.shared.delete(url: url)
         reload()
     }
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 extension URL: Identifiable { public var id: String { absoluteString } }
