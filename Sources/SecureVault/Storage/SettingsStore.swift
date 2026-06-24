@@ -15,15 +15,19 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(crosshairColor, forKey: "crosshairColor") }
     }
 
+    @Published var crosshairOnPhoto: Bool {
+        didSet { UserDefaults.standard.set(crosshairOnPhoto, forKey: "crosshairOnPhoto") }
+    }
+
     private let avatarKey = "userAvatar"
 
     init() {
         showCrosshair = UserDefaults.standard.bool(forKey: "showCrosshair")
         crosshairColor = UserDefaults.standard.string(forKey: "crosshairColor") ?? "white"
+        crosshairOnPhoto = UserDefaults.standard.bool(forKey: "crosshairOnPhoto")
         loadAvatar()
     }
 
-    // MARK: - Пароли
     var mainCode: String {
         get { UserDefaults.standard.string(forKey: "mainCode") ?? "2026" }
         set { UserDefaults.standard.set(newValue, forKey: "mainCode") }
