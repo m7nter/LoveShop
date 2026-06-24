@@ -15,11 +15,16 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(crosshairColor, forKey: "crosshairColor") }
     }
 
+    @Published var shareAsAlbum: Bool {
+        didSet { UserDefaults.standard.set(shareAsAlbum, forKey: "shareAsAlbum") }
+    }
+
     private let avatarKey = "userAvatar"
 
     init() {
         showCrosshair = UserDefaults.standard.bool(forKey: "showCrosshair")
         crosshairColor = UserDefaults.standard.string(forKey: "crosshairColor") ?? "white"
+        shareAsAlbum = UserDefaults.standard.bool(forKey: "shareAsAlbum")
         loadAvatar()
     }
 
