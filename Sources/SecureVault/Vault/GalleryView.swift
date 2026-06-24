@@ -5,7 +5,7 @@ struct GalleryView: View {
     @State private var groupedPhotos: [(String, [URL])] = []
     @State private var selectedURL: URL?
     @State private var showSettings = false
-    @State private var sharingItems: [Any]? = nil
+    @State private var sharingItems: [Any] = []
     @State private var showShareSheet = false
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 2)]
 
@@ -38,7 +38,6 @@ struct GalleryView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.black.opacity(0.85))
                         }
                     }
@@ -70,23 +69,16 @@ struct GalleryView: View {
             SettingsView()
         }
         .sheet(isPresented: $showShareSheet) {
-            if let items = sharingItems {
-                ShareSheet(items: items)
-            }
+            ShareSheet(items: sharingItems)
         }
     }
 
     private func shareDay(urls: [URL]) {
-        var images: [UIImage] = []
-        for url in urls {
-            if let data = try? Data(contentsOf: url),
-               let img = UIImage(data: data) {
-                images.append(img)
-            }
+        guard !urls.isEmpty else { return }
+        sharingItems = urls
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            showShareSheet = true
         }
-        guard !images.isEmpty else { return }
-        sharingItems = images
-        showShareSheet = true
     }
 
     private func reload() {
