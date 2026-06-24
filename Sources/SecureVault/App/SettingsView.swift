@@ -58,16 +58,6 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Выгрузка фото") {
-                    Toggle("Отправлять одним альбомом", isOn: $store.shareAsAlbum)
-                        .tint(.orange)
-                    Text(store.shareAsAlbum
-                         ? "Все фото дня отправятся одним сообщением"
-                         : "Каждое фото отправляется отдельным сообщением")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
                 Section("Подсказка") {
                     Text("Фото отображается в правом нижнем углу каждого снимка")
                         .font(.caption)
