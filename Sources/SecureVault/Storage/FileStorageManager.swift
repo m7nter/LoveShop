@@ -1,5 +1,11 @@
-// FileStorageManager.swift
 import UIKit
+import CoreLocation
+
+struct PhotoMeta: Codable {
+    let latitude: Double
+    let longitude: Double
+    let date: Date
+}
 
 final class FileStorageManager {
     static let shared = FileStorageManager()
@@ -15,11 +21,25 @@ final class FileStorageManager {
                                                   withIntermediateDirectories: true)
     }
 
-    func save(image: UIImage) -> URL? {
+    func save(image: UIImage, location: CLLocation? = nil) -> URL? {
         guard let data = image.jpegData(compressionQuality: 0.92) else { return nil }
-        let filename = "\(UUID().uuidString).jpg"
-        let url = vaultDirectory.appendingPathComponent(filename)
+        let name = UUID().uuidString
+        let url = vaultDirectory.appendingPathComponent("\(name).jpg")
         try? data.write(to: url)
+
+        // Сохраняем метаданные рядом
+        if let loc = location {
+            let meta = PhotoMeta(
+                latitude: loc.coordinate.latitude,
+                longitude: loc.coordinate.longitude,
+                date: Date()
+            )
+            if let metaData = try? JSONEncoder().encode(meta) {
+                let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
+                try? metaData.write(to: metaURL)
+            }
+        }
+
         return url
     }
 
@@ -38,7 +58,22 @@ final class FileStorageManager {
             }
     }
 
+    func loadMeta(for url: URL) -> PhotoMeta? {
+        let name = url.deletingPathExtension().lastPathComponent
+        let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
+        guard let data = try? Data(contentsOf: metaURL) else { return nil }
+        return try? JSONDecoder().decode(PhotoMeta.self, from: data)
+    }
+
+    func loadAllWithMeta() -> [(URL, PhotoMeta?)] {
+        return loadAll().map { ($0, loadMeta(for: $0)) }
+    }
+
     func delete(url: URL) {
         try? FileManager.default.removeItem(at: url)
+        // Удаляем метаданные
+        let name = url.deletingPathExtension().lastPathComponent
+        let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
+        try? FileManager.default.removeItem(at: metaURL)
     }
 }
