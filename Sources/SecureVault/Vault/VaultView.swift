@@ -11,6 +11,8 @@ struct VaultView: View {
     @State private var showMap = false
     @StateObject private var cameraVM = CameraViewModel()
 
+    var onLock: () -> Void
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -43,6 +45,19 @@ struct VaultView: View {
                         VaultActionButton(icon: "map.fill", label: "Карта меток") {
                             showMap = true
                         }
+                    }
+
+                    // Кнопка назад в калькулятор
+                    Button {
+                        onLock()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "chevron.left")
+                            Text("Калькулятор")
+                        }
+                        .font(.system(size: 15))
+                        .foregroundColor(.gray)
+                        .padding(.top, 16)
                     }
                 }
             }
