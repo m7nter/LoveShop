@@ -109,6 +109,16 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Автоблокировка") {
+                    Picker("Блокировать через", selection: $store.autoLockTimeout) {
+                        Text("Выключено").tag(0)
+                        Text("1 минуту").tag(60)
+                        Text("5 минут").tag(300)
+                        Text("15 минут").tag(900)
+                        Text("30 минут").tag(1800)
+                    }
+                }
+
                 Section("Подсказка") {
                     Text("Фото отображается в правом нижнем углу каждого снимка")
                         .font(.caption).foregroundColor(.secondary)
