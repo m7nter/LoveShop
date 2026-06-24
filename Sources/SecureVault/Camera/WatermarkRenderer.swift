@@ -152,7 +152,7 @@ struct WatermarkRenderer {
             if SettingsStore.shared.crosshairOnPhoto {
                 let cx = size.width / 2
                 let cy = size.height / 2
-                let lineLen = size.width * 0.08
+                let lineLen = size.width * 0.04
                 let lineW: CGFloat = max(size.width * 0.004, 2)
 
                 let crossColor: UIColor
