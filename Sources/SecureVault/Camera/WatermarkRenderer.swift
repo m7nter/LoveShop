@@ -17,17 +17,26 @@ struct WatermarkRenderer {
             let padding: CGFloat = size.width * 0.03
             let font = UIFont.monospacedSystemFont(
                 ofSize: max(size.width * 0.028, 16), weight: .semibold)
+            let smallFont = UIFont.monospacedSystemFont(
+                ofSize: max(size.width * 0.022, 12), weight: .regular)
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: font,
                 .foregroundColor: UIColor.white
             ]
+            let smallAttrs: [NSAttributedString.Key: Any] = [
+                .font: smallFont,
+                .foregroundColor: UIColor.white
+            ]
             let lineHeight = font.lineHeight + 4
+            let smallLineHeight = smallFont.lineHeight + 2
 
-            // ── ВЕРХНЯЯ ПОЛОСА ──
+            // ── ВЕРХНЯЯ ПОЛОСА (2 строки если есть азимут) ──
             var topText = "LAT: N/A   LON: N/A"
             var accuracyText = ""
+            var azmText = ""
+
             if let loc = location {
-                topText = String(format: "%.6f, %.6f",
+                topText = String(format: "%.6f,  %.6f",
                                  loc.coordinate.latitude,
                                  loc.coordinate.longitude)
                 if loc.horizontalAccuracy > 0 {
@@ -35,38 +44,69 @@ struct WatermarkRenderer {
                 }
             }
 
-            let topBarH = lineHeight + padding * 2
+            if let hdg = heading {
+                let dir = LocationManager.shared.compassDirection(from: hdg.magneticHeading)
+                azmText = String(format: "AZM: %d°  %@", Int(hdg.magneticHeading), dir)
+            }
+
+            let hasAzm = !azmText.isEmpty
+            let topBarH = hasAzm
+                ? lineHeight + smallLineHeight + padding * 2 + 4
+                : lineHeight + padding * 2
+
             UIColor.black.withAlphaComponent(0.55).setFill()
             UIRectFill(CGRect(x: 0, y: 0, width: size.width, height: topBarH))
 
+            // Иконка + координаты
             let pinConfig = UIImage.SymbolConfiguration(pointSize: max(size.width * 0.025, 14))
             if let pinImg = UIImage(systemName: "mappin", withConfiguration: pinConfig)?
                 .withTintColor(.white, renderingMode: .alwaysOriginal) {
                 let iconSize = pinImg.size
-                let iconY = (topBarH - iconSize.height) / 2
+                let iconY = padding + (lineHeight - iconSize.height) / 2
                 pinImg.draw(at: CGPoint(x: padding, y: iconY))
                 let coordRect = CGRect(
                     x: padding + iconSize.width + 6,
-                    y: (topBarH - lineHeight) / 2,
+                    y: padding,
                     width: size.width * 0.65,
                     height: lineHeight)
                 (topText as NSString).draw(in: coordRect, withAttributes: attrs)
             }
 
+            // Точность + точка
             if !accuracyText.isEmpty {
                 let dotSize: CGFloat = max(size.width * 0.018, 12)
                 let dotX = size.width - dotSize - padding / 2
-                let dotY = (topBarH - dotSize) / 2
+                let dotY = padding + (lineHeight - dotSize) / 2
                 let isAccurate = location?.horizontalAccuracy ?? 999 < 15
                 (isAccurate ? UIColor.green : UIColor.yellow).setFill()
                 UIBezierPath(ovalIn: CGRect(x: dotX, y: dotY,
                                             width: dotSize, height: dotSize)).fill()
-                let accSize = (accuracyText as NSString).size(withAttributes: attrs)
+                let accSize = (accuracyText as NSString).size(withAttributes: smallAttrs)
                 let accRect = CGRect(x: dotX - accSize.width - 8,
-                                     y: (topBarH - lineHeight) / 2,
+                                     y: padding + (lineHeight - smallLineHeight) / 2,
                                      width: accSize.width,
-                                     height: lineHeight)
-                (accuracyText as NSString).draw(in: accRect, withAttributes: attrs)
+                                     height: smallLineHeight)
+                (accuracyText as NSString).draw(in: accRect, withAttributes: smallAttrs)
+            }
+
+            // Азимут — вторая строка
+            if hasAzm {
+                // Иконка компаса
+                let compassConfig = UIImage.SymbolConfiguration(pointSize: max(size.width * 0.02, 12))
+                if let compassImg = UIImage(systemName: "location.north.fill",
+                                           withConfiguration: compassConfig)?
+                    .withTintColor(.orange, renderingMode: .alwaysOriginal) {
+                    let iconSize = compassImg.size
+                    let azmY = padding + lineHeight + 4
+                    let iconY = azmY + (smallLineHeight - iconSize.height) / 2
+                    compassImg.draw(at: CGPoint(x: padding, y: iconY))
+                    let azmRect = CGRect(
+                        x: padding + iconSize.width + 6,
+                        y: azmY,
+                        width: size.width * 0.5,
+                        height: smallLineHeight)
+                    (azmText as NSString).draw(in: azmRect, withAttributes: smallAttrs)
+                }
             }
 
             // ── НИЖНЯЯ ЧАСТЬ ──
@@ -128,15 +168,12 @@ struct WatermarkRenderer {
                 ctx.setStrokeColor(crossColor.cgColor)
                 ctx.setLineWidth(lineW)
                 ctx.setLineCap(.round)
-
                 ctx.move(to: CGPoint(x: cx - lineLen, y: cy))
                 ctx.addLine(to: CGPoint(x: cx + lineLen, y: cy))
                 ctx.strokePath()
-
                 ctx.move(to: CGPoint(x: cx, y: cy - lineLen))
                 ctx.addLine(to: CGPoint(x: cx, y: cy + lineLen))
                 ctx.strokePath()
-
                 ctx.restoreGState()
             }
         }
