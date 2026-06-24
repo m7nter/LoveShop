@@ -8,6 +8,7 @@ struct VaultView: View {
     @State private var showEditor = false
     @State private var showGallery = false
     @State private var showVaultLock = false
+    @State private var showMap = false
     @StateObject private var cameraVM = CameraViewModel()
 
     var body: some View {
@@ -37,6 +38,12 @@ struct VaultView: View {
                             }
                         }
                     }
+
+                    HStack(spacing: 16) {
+                        VaultActionButton(icon: "map.fill", label: "Карта меток") {
+                            showMap = true
+                        }
+                    }
                 }
             }
             .navigationBarHidden(true)
@@ -51,7 +58,10 @@ struct VaultView: View {
                 capturedImage = img
                 showCamera = false
                 if cameraVM.quickMode {
-                    _ = FileStorageManager.shared.save(image: img)
+                    _ = FileStorageManager.shared.save(
+                        image: img,
+                        location: LocationManager.shared.location
+                    )
                 } else {
                     showEditor = true
                 }
@@ -60,7 +70,10 @@ struct VaultView: View {
         .fullScreenCover(isPresented: $showEditor) {
             if let img = capturedImage {
                 PhotoEditorView(image: img) { edited in
-                    _ = FileStorageManager.shared.save(image: edited)
+                    _ = FileStorageManager.shared.save(
+                        image: edited,
+                        location: LocationManager.shared.location
+                    )
                     showEditor = false
                 } onDiscard: {
                     showEditor = false
@@ -77,6 +90,9 @@ struct VaultView: View {
             } onCancel: {
                 showVaultLock = false
             }
+        }
+        .fullScreenCover(isPresented: $showMap) {
+            PhotoMapView()
         }
     }
 }
