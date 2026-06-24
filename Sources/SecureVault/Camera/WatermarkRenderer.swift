@@ -7,7 +7,6 @@ struct WatermarkRenderer {
                       heading: CLHeading?,
                       labelText: String? = nil) -> UIImage {
 
-        // Нормализуем ориентацию — это ключевое
         guard let normalized = image.normalized() else { return image }
         let size = normalized.size
 
@@ -40,10 +39,8 @@ struct WatermarkRenderer {
             UIColor.black.withAlphaComponent(0.55).setFill()
             UIRectFill(CGRect(x: 0, y: 0, width: size.width, height: topBarH))
 
-            let pinConfig = UIImage.SymbolConfiguration(
-                pointSize: max(size.width * 0.025, 14))
-            if let pinImg = UIImage(systemName: "mappin",
-                                    withConfiguration: pinConfig)?
+            let pinConfig = UIImage.SymbolConfiguration(pointSize: max(size.width * 0.025, 14))
+            if let pinImg = UIImage(systemName: "mappin", withConfiguration: pinConfig)?
                 .withTintColor(.white, renderingMode: .alwaysOriginal) {
                 let iconSize = pinImg.size
                 let iconY = (topBarH - iconSize.height) / 2
@@ -82,19 +79,16 @@ struct WatermarkRenderer {
                 let bottomY = size.height - bottomBarH
 
                 UIColor.black.withAlphaComponent(0.55).setFill()
-                UIRectFill(CGRect(x: 0, y: bottomY,
-                                  width: size.width, height: bottomBarH))
+                UIRectFill(CGRect(x: 0, y: bottomY, width: size.width, height: bottomBarH))
 
                 if let label = labelText, !label.isEmpty {
-                    let labelFont = UIFont.systemFont(
-                        ofSize: max(size.width * 0.03, 18), weight: .bold)
+                    let labelFont = UIFont.systemFont(ofSize: max(size.width * 0.03, 18), weight: .bold)
                     let labelAttrs: [NSAttributedString.Key: Any] = [
                         .font: labelFont,
                         .foregroundColor: UIColor.white
                     ]
                     let labelRect = CGRect(
-                        x: padding,
-                        y: bottomY + padding,
+                        x: padding, y: bottomY + padding,
                         width: size.width - avatarSize - padding * 3,
                         height: bottomBarH - padding * 2)
                     (label as NSString).draw(in: labelRect, withAttributes: labelAttrs)
@@ -112,6 +106,38 @@ struct WatermarkRenderer {
                     avatar.draw(in: avatarRect)
                     ctx.restoreGState()
                 }
+            }
+
+            // ── ПЕРЕКРЕСТИЕ НА ФОТО ──
+            if SettingsStore.shared.crosshairOnPhoto {
+                let cx = size.width / 2
+                let cy = size.height / 2
+                let lineLen = size.width * 0.08
+                let lineW: CGFloat = max(size.width * 0.004, 2)
+
+                let crossColor: UIColor
+                switch SettingsStore.shared.crosshairColor {
+                case "red": crossColor = .red
+                case "green": crossColor = .green
+                case "yellow": crossColor = .yellow
+                default: crossColor = .white
+                }
+
+                let ctx = UIGraphicsGetCurrentContext()!
+                ctx.saveGState()
+                ctx.setStrokeColor(crossColor.cgColor)
+                ctx.setLineWidth(lineW)
+                ctx.setLineCap(.round)
+
+                ctx.move(to: CGPoint(x: cx - lineLen, y: cy))
+                ctx.addLine(to: CGPoint(x: cx + lineLen, y: cy))
+                ctx.strokePath()
+
+                ctx.move(to: CGPoint(x: cx, y: cy - lineLen))
+                ctx.addLine(to: CGPoint(x: cx, y: cy + lineLen))
+                ctx.strokePath()
+
+                ctx.restoreGState()
             }
         }
         return result
