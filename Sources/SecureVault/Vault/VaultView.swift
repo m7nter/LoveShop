@@ -7,6 +7,7 @@ struct VaultView: View {
     @State private var capturedImage: UIImage?
     @State private var showEditor = false
     @State private var showGallery = false
+    @State private var showVaultLock = false
     @StateObject private var cameraVM = CameraViewModel()
 
     var body: some View {
@@ -28,7 +29,12 @@ struct VaultView: View {
                             showCamera = true
                         }
                         VaultActionButton(icon: "photo.on.rectangle", label: "Галерея") {
-                            showGallery = true
+                            let store = SettingsStore.shared
+                            if store.vaultCodeEnabled && !store.vaultCode.isEmpty {
+                                showVaultLock = true
+                            } else {
+                                showGallery = true
+                            }
                         }
                     }
                 }
@@ -45,7 +51,6 @@ struct VaultView: View {
                 capturedImage = img
                 showCamera = false
                 if cameraVM.quickMode {
-                    // Быстрый режим — сразу сохраняем без редактора
                     _ = FileStorageManager.shared.save(image: img)
                 } else {
                     showEditor = true
@@ -64,6 +69,14 @@ struct VaultView: View {
         }
         .fullScreenCover(isPresented: $showGallery) {
             GalleryView()
+        }
+        .fullScreenCover(isPresented: $showVaultLock) {
+            VaultLockView {
+                showVaultLock = false
+                showGallery = true
+            } onCancel: {
+                showVaultLock = false
+            }
         }
     }
 }
