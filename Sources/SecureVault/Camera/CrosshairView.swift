@@ -14,16 +14,16 @@ struct CrosshairView: View {
 
     var body: some View {
         ZStack {
-            // Горизонтальная линия на весь экран
+            // Горизонтальная линия — короткая
             Rectangle()
                 .fill(lineColor)
-                .frame(height: 2)
+                .frame(width: 40, height: 2)
 
-            // Вертикальная линия на весь экран
+            // Вертикальная линия — короткая
             Rectangle()
                 .fill(lineColor)
-                .frame(width: 2)
+                .frame(width: 2, height: 40)
         }
-        .ignoresSafeArea()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
