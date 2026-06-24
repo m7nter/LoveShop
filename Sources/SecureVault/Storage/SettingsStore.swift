@@ -23,6 +23,32 @@ class SettingsStore: ObservableObject {
         loadAvatar()
     }
 
+    // MARK: - Пароли
+    var mainCode: String {
+        get { UserDefaults.standard.string(forKey: "mainCode") ?? "2026" }
+        set { UserDefaults.standard.set(newValue, forKey: "mainCode") }
+    }
+
+    var vaultCode: String {
+        get { UserDefaults.standard.string(forKey: "vaultCode") ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: "vaultCode") }
+    }
+
+    var kamikazeCode: String {
+        get { UserDefaults.standard.string(forKey: "kamikazeCode") ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: "kamikazeCode") }
+    }
+
+    var vaultCodeEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "vaultCodeEnabled") }
+        set { UserDefaults.standard.set(newValue, forKey: "vaultCodeEnabled") }
+    }
+
+    var kamikazeCodeEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "kamikazeCodeEnabled") }
+        set { UserDefaults.standard.set(newValue, forKey: "kamikazeCodeEnabled") }
+    }
+
     private func saveAvatar() {
         guard let img = avatarImage,
               let data = img.jpegData(compressionQuality: 0.8) else { return }
