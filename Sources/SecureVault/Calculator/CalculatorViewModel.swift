@@ -4,6 +4,7 @@ import Combine
 class CalculatorViewModel: ObservableObject {
     @Published var display: String = "0"
     @Published var shouldUnlock: Bool = false
+    @Published var history: [String] = []
 
     private var currentInput: String = ""
     private var storedValue: Double = 0
@@ -93,6 +94,9 @@ class CalculatorViewModel: ObservableObject {
         case "÷": result = rhs != 0 ? storedValue / rhs : 0
         default: return
         }
+
+        let historyEntry = "\(formatResult(storedValue)) \(op) \(formatResult(rhs)) = \(formatResult(result))"
+        history.append(historyEntry)
 
         storedValue = result
         currentInput = formatResult(result)
