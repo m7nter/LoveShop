@@ -50,7 +50,7 @@ struct CalculatorView: View {
                         }
                     }
                     .padding(.horizontal, spacing)
-                    .padding(.bottom, geo.safeAreaInsets.bottom + spacing)
+                    .padding(.bottom, max(geo.safeAreaInsets.bottom, 20))
                 }
             }
         }
