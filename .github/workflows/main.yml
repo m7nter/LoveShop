@@ -20,6 +20,15 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Fix App Icon
+        run: |
+          sips -z 1024 1024 \
+            Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png \
+            --out Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+          echo "Icon size after fix:"
+          sips -g pixelWidth -g pixelHeight \
+            Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+
       - name: Generate Xcode project
         run: xcodegen generate --spec project.yml
 
