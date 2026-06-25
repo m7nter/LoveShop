@@ -54,9 +54,21 @@ struct CalculatorView: View {
 
                     Spacer()
 
+                    // Прошлое действие
+                    if !vm.expression.isEmpty {
+                        Text(vm.expression)
+                            .font(.system(size: 24, weight: .light))
+                            .foregroundColor(.gray)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 4)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                    }
+
                     // Дисплей
                     Text(vm.display)
-                        .font(.system(size: 80, weight: .thin))
+                        .font(.system(size: 72, weight: .regular))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .padding(.horizontal, 24)
