@@ -3,6 +3,7 @@ import SwiftUI
 struct CalculatorView: View {
     @StateObject private var vm = CalculatorViewModel()
     var onUnlock: () -> Void
+    @State private var showHistory = false
 
     private let buttons: [[String]] = [
         ["⌫", "AC", "%", "÷"],
@@ -21,8 +22,40 @@ struct CalculatorView: View {
                 Color.black.ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    // Верхние кнопки
+                    HStack {
+                        Button {
+                            showHistory = true
+                        } label: {
+                            Image(systemName: "clock")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Color(red: 0.2, green: 0.2, blue: 0.2))
+                                .clipShape(Circle())
+                        }
+                        .padding(.leading, 16)
+                        .padding(.top, geo.safeAreaInsets.top + 8)
+
+                        Spacer()
+
+                        Button {
+                            // Переключение режима — заглушка
+                        } label: {
+                            Image(systemName: "square.grid.3x3.fill")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Color(red: 0.2, green: 0.2, blue: 0.2))
+                                .clipShape(Circle())
+                        }
+                        .padding(.trailing, 16)
+                        .padding(.top, geo.safeAreaInsets.top + 8)
+                    }
+
                     Spacer()
 
+                    // Дисплей
                     Text(vm.display)
                         .font(.system(size: 80, weight: .thin))
                         .foregroundColor(.white)
@@ -32,6 +65,7 @@ struct CalculatorView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.3)
 
+                    // Кнопки
                     VStack(spacing: spacing) {
                         ForEach(buttons, id: \.self) { row in
                             HStack(spacing: spacing) {
@@ -54,6 +88,9 @@ struct CalculatorView: View {
         .ignoresSafeArea()
         .onChange(of: vm.shouldUnlock) { val in
             if val { onUnlock() }
+        }
+        .sheet(isPresented: $showHistory) {
+            HistoryView(history: vm.history)
         }
     }
 }
@@ -106,6 +143,35 @@ struct CalculatorButton: View {
                 .frame(width: size, height: size)
                 .background(bgColor)
                 .clipShape(Circle())
+        }
+    }
+}
+
+struct HistoryView: View {
+    let history: [String]
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        NavigationView {
+            List {
+                if history.isEmpty {
+                    Text("История пуста")
+                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(history.reversed(), id: \.self) { item in
+                        Text(item)
+                            .font(.system(size: 16, design: .monospaced))
+                    }
+                }
+            }
+            .navigationTitle("История")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Готово") { dismiss() }
+                        .foregroundColor(.orange)
+                }
+            }
         }
     }
 }
