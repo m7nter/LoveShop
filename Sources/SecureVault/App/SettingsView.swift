@@ -64,6 +64,19 @@ struct SettingsView: View {
                 }
 
                 Section("Безопасность") {
+                    Toggle("Блокировать при сворачивании", isOn: $store.lockOnBackground)
+                        .tint(.orange)
+
+                    if !store.lockOnBackground {
+                        Picker("Автоблокировка", selection: $store.autoLockTimeout) {
+                            Text("Выключено").tag(0)
+                            Text("1 минуту").tag(60)
+                            Text("5 минут").tag(300)
+                            Text("15 минут").tag(900)
+                            Text("30 минут").tag(1800)
+                        }
+                    }
+
                     Button("Изменить основной пароль") { showChangeMain = true }
                         .foregroundColor(.orange)
 
@@ -106,16 +119,6 @@ struct SettingsView: View {
                     if store.kamikazeCodeEnabled {
                         Button("Изменить пароль-камикадзе") { showChangeKamikaze = true }
                             .foregroundColor(.red)
-                    }
-                }
-
-                Section("Автоблокировка") {
-                    Picker("Блокировать через", selection: $store.autoLockTimeout) {
-                        Text("Выключено").tag(0)
-                        Text("1 минуту").tag(60)
-                        Text("5 минут").tag(300)
-                        Text("15 минут").tag(900)
-                        Text("30 минут").tag(1800)
                     }
                 }
 
