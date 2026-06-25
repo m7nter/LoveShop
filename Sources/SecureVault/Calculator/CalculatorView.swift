@@ -4,7 +4,6 @@ struct CalculatorView: View {
     @StateObject private var vm = CalculatorViewModel()
     var onUnlock: () -> Void
 
-    // Современная раскладка iOS калькулятора
     private let buttons: [[String]] = [
         ["⌫", "AC", "%", "÷"],
         ["7", "8", "9", "×"],
@@ -24,7 +23,6 @@ struct CalculatorView: View {
                 VStack(spacing: 0) {
                     Spacer()
 
-                    // Дисплей
                     Text(vm.display)
                         .font(.system(size: 80, weight: .thin))
                         .foregroundColor(.white)
@@ -34,36 +32,23 @@ struct CalculatorView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.3)
 
-                    // Кнопки
-                    VStack(spacing: 0) {
-    Spacer()
-
-    Text(vm.display)
-        .font(.system(size: 80, weight: .thin))
-        .foregroundColor(.white)
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding(.horizontal, 24)
-        .padding(.bottom, 16)
-        .lineLimit(1)
-        .minimumScaleFactor(0.3)
-
-    VStack(spacing: spacing) {
-        ForEach(buttons, id: \.self) { row in
-            HStack(spacing: spacing) {
-                ForEach(row, id: \.self) { btn in
-                    CalculatorButton(
-                        title: btn,
-                        vm: vm,
-                        size: btnSize,
-                        spacing: spacing
-                    )
+                    VStack(spacing: spacing) {
+                        ForEach(buttons, id: \.self) { row in
+                            HStack(spacing: spacing) {
+                                ForEach(row, id: \.self) { btn in
+                                    CalculatorButton(
+                                        title: btn,
+                                        vm: vm,
+                                        size: btnSize,
+                                        spacing: spacing
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, spacing)
+                    .padding(.bottom, 48)
                 }
-            }
-        }
-    }
-    .padding(.horizontal, spacing)
-    .padding(.bottom, 48)
-}
             }
         }
         .ignoresSafeArea()
@@ -90,46 +75,25 @@ struct CalculatorButton: View {
         }
     }
 
-    private var textColor: Color {
-        switch title {
-        case "⌫", "AC", "%", "+/−":
-            return .white
-        default:
-            return .white
-        }
-    }
-
     private var label: some View {
         Group {
             switch title {
             case "⌫":
                 Image(systemName: "delete.left")
                     .font(.system(size: size * 0.32, weight: .regular))
-                    .foregroundColor(textColor)
-            case "÷":
-                Text("÷")
-                    .font(.system(size: size * 0.42, weight: .regular))
-                    .foregroundColor(textColor)
-            case "×":
-                Text("×")
-                    .font(.system(size: size * 0.42, weight: .regular))
-                    .foregroundColor(textColor)
-            case "−":
-                Text("−")
-                    .font(.system(size: size * 0.5, weight: .regular))
-                    .foregroundColor(textColor)
-            case "+":
-                Text("+")
-                    .font(.system(size: size * 0.42, weight: .regular))
-                    .foregroundColor(textColor)
+                    .foregroundColor(.white)
             case "=":
                 Text("=")
                     .font(.system(size: size * 0.42, weight: .bold))
-                    .foregroundColor(textColor)
+                    .foregroundColor(.white)
+            case "÷", "×", "−", "+":
+                Text(title)
+                    .font(.system(size: size * 0.42, weight: .regular))
+                    .foregroundColor(.white)
             default:
                 Text(title)
                     .font(.system(size: size * 0.36, weight: .regular))
-                    .foregroundColor(textColor)
+                    .foregroundColor(.white)
             }
         }
     }
