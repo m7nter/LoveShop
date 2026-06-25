@@ -3,6 +3,7 @@ import Combine
 
 class CalculatorViewModel: ObservableObject {
     @Published var display: String = "0"
+    @Published var expression: String = ""
     @Published var shouldUnlock: Bool = false
     @Published var history: [String] = []
 
@@ -34,6 +35,16 @@ class CalculatorViewModel: ObservableObject {
         }
     }
 
+    private func formatted(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = " "
+        formatter.decimalSeparator = ","
+        formatter.maximumFractionDigits = 6
+        formatter.groupingSize = 3
+        return formatter.string(from: NSNumber(value: value)) ?? formatResult(value)
+    }
+
     private func handleDigit(_ d: String) {
         if d == "." && currentInput.contains(".") { return }
         if shouldResetDisplay {
@@ -46,14 +57,25 @@ class CalculatorViewModel: ObservableObject {
                 if currentInput.count < 9 { currentInput += d }
             }
         }
-        display = currentInput.replacingOccurrences(of: ".", with: ",")
+        if let val = Double(currentInput) {
+            display = formatted(val)
+                .replacingOccurrences(of: ",", with: "TEMP")
+                .replacingOccurrences(of: ".", with: ",")
+                .replacingOccurrences(of: "TEMP", with: ",")
+        } else {
+            display = currentInput.replacingOccurrences(of: ".", with: ",")
+        }
     }
 
     private func handleBackspace() {
         if !currentInput.isEmpty {
             currentInput.removeLast()
-            if currentInput.isEmpty { currentInput = "0" }
-            display = currentInput.replacingOccurrences(of: ".", with: ",")
+            if currentInput.isEmpty || currentInput == "-" { currentInput = "0" }
+            if let val = Double(currentInput) {
+                display = formatted(val)
+            } else {
+                display = currentInput.replacingOccurrences(of: ".", with: ",")
+            }
         }
     }
 
@@ -61,6 +83,7 @@ class CalculatorViewModel: ObservableObject {
         if !currentInput.isEmpty {
             storedValue = Double(currentInput) ?? 0
         }
+        expression = "\(formatted(storedValue)) \(op)"
         currentOperator = op
         shouldResetDisplay = true
         currentInput = ""
@@ -95,12 +118,13 @@ class CalculatorViewModel: ObservableObject {
         default: return
         }
 
-        let historyEntry = "\(formatResult(storedValue)) \(op) \(formatResult(rhs)) = \(formatResult(result))"
-        history.append(historyEntry)
+        let entry = "\(formatted(storedValue)) \(op) \(formatted(rhs)) = \(formatted(result))"
+        history.append(entry)
+        expression = "\(formatted(storedValue)) \(op) \(formatted(rhs)) ="
 
         storedValue = result
         currentInput = formatResult(result)
-        display = currentInput.replacingOccurrences(of: ".", with: ",")
+        display = formatted(result)
         currentOperator = nil
         shouldResetDisplay = true
     }
@@ -114,6 +138,7 @@ class CalculatorViewModel: ObservableObject {
 
     private func reset() {
         display = "0"
+        expression = ""
         currentInput = ""
         storedValue = 0
         currentOperator = nil
@@ -124,7 +149,7 @@ class CalculatorViewModel: ObservableObject {
         if let v = Double(currentInput) {
             let toggled = -v
             currentInput = formatResult(toggled)
-            display = currentInput.replacingOccurrences(of: ".", with: ",")
+            display = formatted(toggled)
         }
     }
 
@@ -132,7 +157,7 @@ class CalculatorViewModel: ObservableObject {
         if let v = Double(currentInput) {
             let pct = v / 100
             currentInput = formatResult(pct)
-            display = currentInput.replacingOccurrences(of: ".", with: ",")
+            display = formatted(pct)
         }
     }
 }
