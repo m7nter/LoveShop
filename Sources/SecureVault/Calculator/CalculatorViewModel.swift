@@ -12,14 +12,18 @@ class CalculatorViewModel: ObservableObject {
 
     func tap(_ symbol: String) {
         switch symbol {
-        case "0"..."9", ".":
+        case "0"..."9":
             handleDigit(symbol)
+        case ",", ".":
+            handleDigit(".")
         case "+", "−", "×", "÷":
             handleOperator(symbol)
         case "=":
             handleEquals()
         case "AC":
             reset()
+        case "⌫":
+            handleBackspace()
         case "+/−":
             toggleSign()
         case "%":
@@ -41,7 +45,15 @@ class CalculatorViewModel: ObservableObject {
                 if currentInput.count < 9 { currentInput += d }
             }
         }
-        display = currentInput
+        display = currentInput.replacingOccurrences(of: ".", with: ",")
+    }
+
+    private func handleBackspace() {
+        if !currentInput.isEmpty {
+            currentInput.removeLast()
+            if currentInput.isEmpty { currentInput = "0" }
+            display = currentInput.replacingOccurrences(of: ".", with: ",")
+        }
     }
 
     private func handleOperator(_ op: String) {
@@ -57,17 +69,13 @@ class CalculatorViewModel: ObservableObject {
         let store = SettingsStore.shared
         let input = currentInput.isEmpty ? display : currentInput
 
-        // Пароль-камикадзе — удаляем все фото
         if store.kamikazeCodeEnabled && !store.kamikazeCode.isEmpty && input == store.kamikazeCode {
             let urls = FileStorageManager.shared.loadAll()
-            for url in urls {
-                FileStorageManager.shared.delete(url: url)
-            }
+            for url in urls { FileStorageManager.shared.delete(url: url) }
             reset()
             return
         }
 
-        // Основной пароль
         if input == store.mainCode {
             shouldUnlock = true
             reset()
@@ -88,7 +96,7 @@ class CalculatorViewModel: ObservableObject {
 
         storedValue = result
         currentInput = formatResult(result)
-        display = currentInput
+        display = currentInput.replacingOccurrences(of: ".", with: ",")
         currentOperator = nil
         shouldResetDisplay = true
     }
@@ -112,7 +120,7 @@ class CalculatorViewModel: ObservableObject {
         if let v = Double(currentInput) {
             let toggled = -v
             currentInput = formatResult(toggled)
-            display = currentInput
+            display = currentInput.replacingOccurrences(of: ".", with: ",")
         }
     }
 
@@ -120,7 +128,7 @@ class CalculatorViewModel: ObservableObject {
         if let v = Double(currentInput) {
             let pct = v / 100
             currentInput = formatResult(pct)
-            display = currentInput
+            display = currentInput.replacingOccurrences(of: ".", with: ",")
         }
     }
 }
