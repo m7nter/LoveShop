@@ -35,23 +35,35 @@ struct CalculatorView: View {
                         .minimumScaleFactor(0.3)
 
                     // Кнопки
-                    VStack(spacing: spacing) {
-                        ForEach(buttons, id: \.self) { row in
-                            HStack(spacing: spacing) {
-                                ForEach(row, id: \.self) { btn in
-                                    CalculatorButton(
-                                        title: btn,
-                                        vm: vm,
-                                        size: btnSize,
-                                        spacing: spacing
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, spacing)
-                    .padding(.bottom, max(geo.safeAreaInsets.bottom, 20))
+                    VStack(spacing: 0) {
+    Spacer()
+
+    Text(vm.display)
+        .font(.system(size: 80, weight: .thin))
+        .foregroundColor(.white)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.horizontal, 24)
+        .padding(.bottom, 16)
+        .lineLimit(1)
+        .minimumScaleFactor(0.3)
+
+    VStack(spacing: spacing) {
+        ForEach(buttons, id: \.self) { row in
+            HStack(spacing: spacing) {
+                ForEach(row, id: \.self) { btn in
+                    CalculatorButton(
+                        title: btn,
+                        vm: vm,
+                        size: btnSize,
+                        spacing: spacing
+                    )
                 }
+            }
+        }
+    }
+    .padding(.horizontal, spacing)
+    .padding(.bottom, 48)
+}
             }
         }
         .ignoresSafeArea()
