@@ -40,9 +40,8 @@ struct CalculatorView: View {
                         Spacer()
 
                         Button {
-                            // Переключение режима — заглушка
                         } label: {
-                            Image(systemName: "square.grid.3x3.fill")
+                            Image(systemName: "plus.forwardslash.minus")
                                 .font(.system(size: 20, weight: .medium))
                                 .foregroundColor(.white)
                                 .frame(width: 44, height: 44)
