@@ -88,7 +88,7 @@ struct CalculatorView: View {
                         }
                     }
                     .padding(.horizontal, spacing)
-                    .padding(.bottom, geo.safeAreaInsets.bottom + 20)
+                    .padding(.bottom, geo.safeAreaInsets.bottom + 60)
                 }
             }
         }
