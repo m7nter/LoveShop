@@ -120,7 +120,7 @@ class CalculatorViewModel: ObservableObject {
 
         let entry = "\(formatted(storedValue)) \(op) \(formatted(rhs)) = \(formatted(result))"
         history.append(entry)
-        expression = "\(formatted(storedValue)) \(op) \(formatted(rhs)) ="
+        expression = "\(formatted(storedValue)) \(op) \(formatted(rhs))"
 
         storedValue = result
         currentInput = formatResult(result)
