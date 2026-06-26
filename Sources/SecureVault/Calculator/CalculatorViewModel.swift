@@ -59,9 +59,6 @@ class CalculatorViewModel: ObservableObject {
         }
         if let val = Double(currentInput) {
             display = formatted(val)
-                .replacingOccurrences(of: ",", with: "TEMP")
-                .replacingOccurrences(of: ".", with: ",")
-                .replacingOccurrences(of: "TEMP", with: ",")
         } else {
             display = currentInput.replacingOccurrences(of: ".", with: ",")
         }
@@ -83,7 +80,7 @@ class CalculatorViewModel: ObservableObject {
         if !currentInput.isEmpty {
             storedValue = Double(currentInput) ?? 0
         }
-        expression = "\(formatted(storedValue)) \(op)"
+        expression = "\(formatted(storedValue))  \(op)"
         currentOperator = op
         shouldResetDisplay = true
         currentInput = ""
@@ -118,9 +115,9 @@ class CalculatorViewModel: ObservableObject {
         default: return
         }
 
-        let entry = "\(formatted(storedValue)) \(op) \(formatted(rhs)) = \(formatted(result))"
+        let entry = "\(formatted(storedValue))  \(op)  \(formatted(rhs)) = \(formatted(result))"
         history.append(entry)
-        expression = "\(formatted(storedValue)) \(op) \(formatted(rhs))"
+        expression = "\(formatted(storedValue))  \(op)  \(formatted(rhs))"
 
         storedValue = result
         currentInput = formatResult(result)
