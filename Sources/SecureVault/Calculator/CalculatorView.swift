@@ -17,11 +17,17 @@ struct CalculatorView: View {
         GeometryReader { geo in
             let spacing: CGFloat = 8
             let btnSize = (geo.size.width - spacing * 5) / 4
+            let totalButtonsH = btnSize * 5 + spacing * 4
+            let displayH: CGFloat = vm.expression.isEmpty ? 100 : 130
+            let topH: CGFloat = 60
+            let totalH = topH + displayH + totalButtonsH + geo.safeAreaInsets.bottom + 20
+            let extraSpace = max(geo.size.height - totalH, 0)
 
             ZStack {
                 Color.black.ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    // Верхние кнопки
                     HStack {
                         Button {
                             showHistory = true
@@ -32,7 +38,6 @@ struct CalculatorView: View {
                                 .frame(width: 44, height: 44)
                         }
                         .padding(.leading, 16)
-                        .padding(.top, geo.safeAreaInsets.top + 4)
 
                         Spacer()
 
@@ -44,22 +49,27 @@ struct CalculatorView: View {
                                 .frame(width: 44, height: 44)
                         }
                         .padding(.trailing, 16)
-                        .padding(.top, geo.safeAreaInsets.top + 4)
                     }
+                    .frame(height: topH)
+                    .padding(.top, geo.safeAreaInsets.top)
 
+                    // Пространство
                     Spacer()
+                        .frame(height: extraSpace)
 
+                    // Выражение
                     if !vm.expression.isEmpty {
                         Text(vm.expression)
                             .font(.system(size: 22, weight: .regular))
                             .foregroundColor(.gray)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .padding(.horizontal, 28)
-                            .padding(.bottom, 2)
+                            .padding(.bottom, 4)
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
                     }
 
+                    // Дисплей
                     Text(vm.display)
                         .font(.system(size: 72, weight: .medium))
                         .foregroundColor(.white)
@@ -69,6 +79,7 @@ struct CalculatorView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.3)
 
+                    // Кнопки
                     VStack(spacing: spacing) {
                         ForEach(buttons, id: \.self) { row in
                             HStack(spacing: spacing) {
@@ -84,7 +95,7 @@ struct CalculatorView: View {
                         }
                     }
                     .padding(.horizontal, spacing)
-                    .padding(.bottom, geo.safeAreaInsets.bottom + 60)
+                    .padding(.bottom, geo.safeAreaInsets.bottom + 8)
                 }
             }
         }
