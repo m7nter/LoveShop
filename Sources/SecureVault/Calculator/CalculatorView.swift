@@ -22,57 +22,53 @@ struct CalculatorView: View {
                 Color.black.ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    // Верхние кнопки
+                    // Верхние кнопки — без фона
                     HStack {
                         Button {
                             showHistory = true
                         } label: {
                             Image(systemName: "clock")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.white)
+                                .font(.system(size: 22, weight: .regular))
+                                .foregroundColor(.white.opacity(0.8))
                                 .frame(width: 44, height: 44)
-                                .background(Color(red: 0.2, green: 0.2, blue: 0.2))
-                                .clipShape(Circle())
                         }
                         .padding(.leading, 16)
-                        .padding(.top, geo.safeAreaInsets.top + 8)
+                        .padding(.top, geo.safeAreaInsets.top + 4)
 
                         Spacer()
 
                         Button {
                         } label: {
                             Image(systemName: "plus.forwardslash.minus")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.white)
+                                .font(.system(size: 22, weight: .regular))
+                                .foregroundColor(.white.opacity(0.8))
                                 .frame(width: 44, height: 44)
-                                .background(Color(red: 0.2, green: 0.2, blue: 0.2))
-                                .clipShape(Circle())
                         }
                         .padding(.trailing, 16)
-                        .padding(.top, geo.safeAreaInsets.top + 8)
+                        .padding(.top, geo.safeAreaInsets.top + 4)
                     }
 
                     Spacer()
 
-                    // Прошлое действие
+                    // Прошлое действие — без знака =
                     if !vm.expression.isEmpty {
                         Text(vm.expression)
-                            .font(.system(size: 24, weight: .light))
+                            .font(.system(size: 22, weight: .regular))
                             .foregroundColor(.gray)
                             .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 4)
+                            .padding(.horizontal, 28)
+                            .padding(.bottom, 2)
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
                     }
 
-                    // Дисплей
+                    // Дисплей — жирный
                     Text(vm.display)
-                        .font(.system(size: 72, weight: .regular))
+                        .font(.system(size: 72, weight: .medium))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .padding(.horizontal, 24)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 12)
                         .lineLimit(1)
                         .minimumScaleFactor(0.3)
 
@@ -92,7 +88,7 @@ struct CalculatorView: View {
                         }
                     }
                     .padding(.horizontal, spacing)
-                    .padding(.bottom, 48)
+                    .padding(.bottom, geo.safeAreaInsets.bottom + 20)
                 }
             }
         }
