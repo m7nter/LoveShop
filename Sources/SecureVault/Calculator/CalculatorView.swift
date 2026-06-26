@@ -17,17 +17,12 @@ struct CalculatorView: View {
         GeometryReader { geo in
             let spacing: CGFloat = 8
             let btnSize = (geo.size.width - spacing * 5) / 4
-            let totalButtonsH = btnSize * 5 + spacing * 4
-            let displayH: CGFloat = vm.expression.isEmpty ? 100 : 130
-            let topH: CGFloat = 60
-            let totalH = topH + displayH + totalButtonsH + geo.safeAreaInsets.bottom + 20
-            let extraSpace = max(geo.size.height - totalH, 0)
 
             ZStack {
                 Color.black.ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Верхние кнопки
+                // Верхние кнопки — прибиты к верху
+                VStack {
                     HStack {
                         Button {
                             showHistory = true
@@ -50,14 +45,14 @@ struct CalculatorView: View {
                         }
                         .padding(.trailing, 16)
                     }
-                    .frame(height: topH)
-                    .padding(.top, geo.safeAreaInsets.top)
-
-                    // Пространство
+                    .padding(.top, geo.safeAreaInsets.top + 8)
                     Spacer()
-                        .frame(height: extraSpace)
+                }
 
-                    // Выражение
+                // Дисплей и кнопки — прибиты к низу
+                VStack(spacing: 0) {
+                    Spacer()
+
                     if !vm.expression.isEmpty {
                         Text(vm.expression)
                             .font(.system(size: 22, weight: .regular))
@@ -69,7 +64,6 @@ struct CalculatorView: View {
                             .minimumScaleFactor(0.5)
                     }
 
-                    // Дисплей
                     Text(vm.display)
                         .font(.system(size: 72, weight: .medium))
                         .foregroundColor(.white)
@@ -79,7 +73,6 @@ struct CalculatorView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.3)
 
-                    // Кнопки
                     VStack(spacing: spacing) {
                         ForEach(buttons, id: \.self) { row in
                             HStack(spacing: spacing) {
