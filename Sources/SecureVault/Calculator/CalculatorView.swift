@@ -22,7 +22,6 @@ struct CalculatorView: View {
                 Color.black.ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    // Верхние кнопки — без фона
                     HStack {
                         Button {
                             showHistory = true
@@ -50,7 +49,6 @@ struct CalculatorView: View {
 
                     Spacer()
 
-                    // Прошлое действие — без знака =
                     if !vm.expression.isEmpty {
                         Text(vm.expression)
                             .font(.system(size: 22, weight: .regular))
@@ -62,7 +60,6 @@ struct CalculatorView: View {
                             .minimumScaleFactor(0.5)
                     }
 
-                    // Дисплей — жирный
                     Text(vm.display)
                         .font(.system(size: 72, weight: .medium))
                         .foregroundColor(.white)
@@ -72,7 +69,6 @@ struct CalculatorView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.3)
 
-                    // Кнопки
                     VStack(spacing: spacing) {
                         ForEach(buttons, id: \.self) { row in
                             HStack(spacing: spacing) {
