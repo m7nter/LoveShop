@@ -21,7 +21,6 @@ struct CalculatorView: View {
             ZStack {
                 Color.black.ignoresSafeArea()
 
-                // Верхние кнопки — прибиты к верху
                 VStack {
                     HStack {
                         Button {
@@ -49,7 +48,6 @@ struct CalculatorView: View {
                     Spacer()
                 }
 
-                // Дисплей и кнопки — прибиты к низу
                 VStack(spacing: 0) {
                     Spacer()
 
@@ -151,6 +149,12 @@ struct CalculatorButton: View {
                 .background(bgColor)
                 .clipShape(Circle())
         }
+        .simultaneousGesture(
+            title == "⌫" ?
+            LongPressGesture(minimumDuration: 1.0)
+                .onEnded { _ in vm.tap("AC") }
+            : nil
+        )
     }
 }
 
