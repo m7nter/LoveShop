@@ -1,4 +1,5 @@
 import SwiftUI
+import AudioToolbox
 
 struct CalculatorView: View {
     @StateObject private var vm = CalculatorViewModel()
@@ -140,8 +141,13 @@ struct CalculatorButton: View {
         }
     }
 
+    private func playClick() {
+        AudioServicesPlaySystemSound(1104)
+    }
+
     var body: some View {
         Button {
+            playClick()
             vm.tap(title)
         } label: {
             label
@@ -152,7 +158,10 @@ struct CalculatorButton: View {
         .simultaneousGesture(
             title == "⌫" ?
             LongPressGesture(minimumDuration: 1.0)
-                .onEnded { _ in vm.tap("AC") }
+                .onEnded { _ in
+                    playClick()
+                    vm.tap("AC")
+                }
             : nil
         )
     }
