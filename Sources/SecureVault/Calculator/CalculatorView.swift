@@ -45,7 +45,7 @@ struct CalculatorView: View {
                         }
                         .padding(.trailing, 16)
                     }
-                    .padding(.top, geo.safeAreaInsets.top + 24)
+                    .padding(.top, geo.safeAreaInsets.top + 48)
                     Spacer()
                 }
 
