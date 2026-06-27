@@ -45,7 +45,7 @@ struct CalculatorView: View {
                         }
                         .padding(.trailing, 16)
                     }
-                    .padding(.top, geo.safeAreaInsets.top + 8)
+                    .padding(.top, geo.safeAreaInsets.top + 24)
                     Spacer()
                 }
 
@@ -88,7 +88,7 @@ struct CalculatorView: View {
                         }
                     }
                     .padding(.horizontal, spacing)
-                    .padding(.bottom, geo.safeAreaInsets.bottom + 8)
+                    .padding(.bottom, geo.safeAreaInsets.bottom + 24)
                 }
             }
         }
