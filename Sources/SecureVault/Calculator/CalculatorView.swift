@@ -7,7 +7,7 @@ struct CalculatorView: View {
     @State private var showHistory = false
 
     private let buttons: [[String]] = [
-        ["⌫", "AC", "%", "÷"],
+        ["⌫", "CLEAR", "%", "÷"],
         ["7", "8", "9", "×"],
         ["4", "5", "6", "−"],
         ["1", "2", "3", "+"],
@@ -77,7 +77,7 @@ struct CalculatorView: View {
                             HStack(spacing: spacing) {
                                 ForEach(row, id: \.self) { btn in
                                     CalculatorButton(
-                                        title: btn,
+                                        title: btn == "CLEAR" ? vm.clearButtonTitle : btn,
                                         vm: vm,
                                         size: btnSize,
                                         spacing: spacing
@@ -109,7 +109,7 @@ struct CalculatorButton: View {
 
     private var bgColor: Color {
         switch title {
-        case "⌫", "AC", "%", "+/−":
+        case "⌫", "AC", "C", "%", "+/−":
             return Color(red: 0.33, green: 0.33, blue: 0.33)
         case "÷", "×", "−", "+", "=":
             return Color(red: 1.0, green: 0.62, blue: 0.04)
@@ -142,15 +142,15 @@ struct CalculatorButton: View {
     }
 
     private func playClick() {
-    switch title {
-    case "⌫":
-        AudioServicesPlaySystemSound(1155) // Delete
-    case "AC", "+/−", "%":
-        AudioServicesPlaySystemSound(1156) // Modifier
-    default:
-        AudioServicesPlaySystemSound(1123) // Press Click
+        switch title {
+        case "⌫":
+            AudioServicesPlaySystemSound(1155)
+        case "AC", "C", "+/−", "%":
+            AudioServicesPlaySystemSound(1156)
+        default:
+            AudioServicesPlaySystemSound(1123)
+        }
     }
-}
 
     var body: some View {
         Button {
