@@ -142,8 +142,15 @@ struct CalculatorButton: View {
     }
 
     private func playClick() {
-        AudioServicesPlaySystemSound(1156)
+    switch title {
+    case "⌫":
+        AudioServicesPlaySystemSound(1155) // Delete
+    case "AC", "+/−", "%":
+        AudioServicesPlaySystemSound(1156) // Modifier
+    default:
+        AudioServicesPlaySystemSound(1123) // Press Click
     }
+}
 
     var body: some View {
         Button {
