@@ -142,7 +142,7 @@ struct CalculatorButton: View {
     }
 
     private func playClick() {
-        AudioServicesPlaySystemSound(1157)
+        AudioServicesPlaySystemSound(1156)
     }
 
     var body: some View {
