@@ -12,6 +12,10 @@ class CalculatorViewModel: ObservableObject {
     private var currentOperator: String? = nil
     private var shouldResetDisplay = false
 
+    var clearButtonTitle: String {
+        currentInput.isEmpty && display == "0" ? "AC" : "C"
+    }
+
     func tap(_ symbol: String) {
         switch symbol {
         case "0"..."9":
@@ -24,6 +28,8 @@ class CalculatorViewModel: ObservableObject {
             handleEquals()
         case "AC":
             reset()
+        case "C":
+            clearCurrent()
         case "⌫":
             handleBackspace()
         case "+/−":
@@ -33,6 +39,11 @@ class CalculatorViewModel: ObservableObject {
         default:
             break
         }
+    }
+
+    private func clearCurrent() {
+        currentInput = ""
+        display = "0"
     }
 
     private func formatted(_ value: Double) -> String {
