@@ -4,7 +4,6 @@ import AudioToolbox
 struct CalculatorView: View {
     @StateObject private var vm = CalculatorViewModel()
     var onUnlock: () -> Void
-    @State private var showHistory = false
 
     private let buttons: [[String]] = [
         ["⌫", "CLEAR", "%", "÷"],
@@ -24,24 +23,16 @@ struct CalculatorView: View {
 
                 VStack {
                     HStack {
-                        Button {
-                            showHistory = true
-                        } label: {
-                            Image(systemName: "clock")
-                                .font(.system(size: 22, weight: .regular))
-                                .foregroundColor(.white.opacity(0.8))
-                                .frame(width: 44, height: 44)
-                        }
-                        .padding(.leading, 16)
-
                         Spacer()
 
                         Button {
                         } label: {
-                            Image(systemName: "plus.forwardslash.minus")
-                                .font(.system(size: 22, weight: .regular))
-                                .foregroundColor(.white.opacity(0.8))
+                            Image(systemName: "calculator")
+                                .font(.system(size: 22, weight: .medium))
+                                .foregroundColor(.white)
                                 .frame(width: 44, height: 44)
+                                .background(Color(red: 0.2, green: 0.2, blue: 0.2))
+                                .clipShape(Circle())
                         }
                         .padding(.trailing, 16)
                     }
@@ -87,16 +78,13 @@ struct CalculatorView: View {
                         }
                     }
                     .padding(.horizontal, spacing)
-                    .padding(.bottom, geo.safeAreaInsets.bottom + 48)
+                    .padding(.bottom, geo.safeAreaInsets.bottom + 24)
                 }
             }
         }
         .ignoresSafeArea()
         .onChange(of: vm.shouldUnlock) { val in
             if val { onUnlock() }
-        }
-        .sheet(isPresented: $showHistory) {
-            HistoryView(history: vm.history)
         }
     }
 }
