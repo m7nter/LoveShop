@@ -51,6 +51,10 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(exportAsZip, forKey: "exportAsZip") }
     }
 
+    @Published var clusterMapPins: Bool {
+        didSet { UserDefaults.standard.set(clusterMapPins, forKey: "clusterMapPins") }
+    }
+
     private let avatarKey = "userAvatar"
 
     init() {
@@ -65,6 +69,7 @@ class SettingsStore: ObservableObject {
         minDistanceThreshold = UserDefaults.standard.object(forKey: "minDistanceThreshold") as? Int ?? 10
         volumeButtonCaptureEnabled = UserDefaults.standard.bool(forKey: "volumeButtonCaptureEnabled")
         exportAsZip = UserDefaults.standard.object(forKey: "exportAsZip") as? Bool ?? true
+        clusterMapPins = UserDefaults.standard.object(forKey: "clusterMapPins") as? Bool ?? true
         loadAvatar()
     }
 
