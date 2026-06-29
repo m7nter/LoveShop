@@ -8,6 +8,12 @@ struct PhotoPin: Identifiable {
     let date: Date
 }
 
+struct PinCluster: Identifiable {
+    let id = UUID()
+    let coordinate: CLLocationCoordinate2D
+    let pins: [PhotoPin]
+}
+
 struct PhotoMapView: View {
     @Environment(\.dismiss) var dismiss
     @State private var pins: [PhotoPin] = []
@@ -16,37 +22,64 @@ struct PhotoMapView: View {
         span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
     )
     @State private var selectedPin: PhotoPin?
+    @ObservedObject private var settings = SettingsStore.shared
 
     var body: some View {
         ZStack {
-            Map(coordinateRegion: $region, annotationItems: pins) { pin in
-                MapAnnotation(coordinate: pin.coordinate) {
-                    Button {
-                        selectedPin = pin
-                    } label: {
-                        VStack(spacing: 2) {
-                            if let data = try? Data(contentsOf: pin.url),
-                               let img = UIImage(data: data) {
-                                Image(uiImage: img)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 44, height: 44)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.orange, lineWidth: 2)
+            Map(coordinateRegion: $region,
+                annotationItems: clusteredPins(pins: pins, span: region.span)) { cluster in
+                MapAnnotation(coordinate: cluster.coordinate) {
+                    if cluster.pins.count > 1 {
+                        Button {
+                            withAnimation {
+                                region = MKCoordinateRegion(
+                                    center: cluster.coordinate,
+                                    span: MKCoordinateSpan(
+                                        latitudeDelta: region.span.latitudeDelta / 2.5,
+                                        longitudeDelta: region.span.longitudeDelta / 2.5
                                     )
-                            } else {
-                                Image(systemName: "camera.fill")
-                                    .foregroundColor(.white)
-                                    .frame(width: 44, height: 44)
-                                    .background(Color.orange)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                )
                             }
-                            Image(systemName: "triangle.fill")
-                                .font(.system(size: 8))
-                                .foregroundColor(.orange)
-                                .rotationEffect(.degrees(180))
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.orange)
+                                    .frame(width: 38, height: 38)
+                                Text("\(cluster.pins.count)")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                            .shadow(radius: 2)
+                        }
+                    } else if let pin = cluster.pins.first {
+                        Button {
+                            selectedPin = pin
+                        } label: {
+                            VStack(spacing: 2) {
+                                if let data = try? Data(contentsOf: pin.url),
+                                   let img = UIImage(data: data) {
+                                    Image(uiImage: img)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 44, height: 44)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.orange, lineWidth: 2)
+                                        )
+                                } else {
+                                    Image(systemName: "camera.fill")
+                                        .foregroundColor(.white)
+                                        .frame(width: 44, height: 44)
+                                        .background(Color.orange)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+                                Image(systemName: "triangle.fill")
+                                    .font(.system(size: 8))
+                                    .foregroundColor(.orange)
+                                    .rotationEffect(.degrees(180))
+                            }
                         }
                     }
                 }
@@ -146,6 +179,34 @@ struct PhotoMapView: View {
             }
         }
         .onAppear { loadPins() }
+    }
+
+    private func clusteredPins(pins: [PhotoPin], span: MKCoordinateSpan) -> [PinCluster] {
+        guard settings.clusterMapPins, pins.count > 1 else {
+            return pins.map { PinCluster(coordinate: $0.coordinate, pins: [$0]) }
+        }
+
+        let gridSize = max(span.latitudeDelta, span.longitudeDelta) / 25
+        guard gridSize > 0 else {
+            return pins.map { PinCluster(coordinate: $0.coordinate, pins: [$0]) }
+        }
+
+        var buckets: [String: [PhotoPin]] = [:]
+        for pin in pins {
+            let latKey = Int((pin.coordinate.latitude / gridSize).rounded())
+            let lonKey = Int((pin.coordinate.longitude / gridSize).rounded())
+            let key = "\(latKey)_\(lonKey)"
+            buckets[key, default: []].append(pin)
+        }
+
+        return buckets.values.map { group in
+            let avgLat = group.map { $0.coordinate.latitude }.reduce(0, +) / Double(group.count)
+            let avgLon = group.map { $0.coordinate.longitude }.reduce(0, +) / Double(group.count)
+            return PinCluster(
+                coordinate: CLLocationCoordinate2D(latitude: avgLat, longitude: avgLon),
+                pins: group
+            )
+        }
     }
 
     private func loadPins() {
