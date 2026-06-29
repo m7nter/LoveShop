@@ -43,7 +43,7 @@ struct GalleryView: View {
                                 .padding(.bottom, 8)
                             } header: {
                                 HStack {
-                                    Text(day)
+                                    Text("\(day) — \(urls.count) фото")
                                         .font(.system(size: 15, weight: .semibold))
                                         .foregroundColor(.white)
                                     Spacer()
@@ -154,7 +154,11 @@ struct GalleryView: View {
         }
         .onAppear { reload() }
         .sheet(item: $selectedURL) { url in
-            PhotoDetailView(url: url) { delete(url: url) }
+            let flat = groupedPhotos.flatMap { $0.1 }
+            let idx = flat.firstIndex(of: url) ?? 0
+            PhotoDetailView(urls: flat, initialIndex: idx) { deletedURL in
+                delete(url: deletedURL)
+            }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
