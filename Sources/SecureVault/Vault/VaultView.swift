@@ -23,7 +23,7 @@ struct VaultView: View {
                         .font(.system(size: 64))
                         .foregroundColor(.orange)
 
-                    Text("Secure Vault")
+                    Text("Хранилище")
                         .font(.title.bold())
                         .foregroundColor(.white)
 
