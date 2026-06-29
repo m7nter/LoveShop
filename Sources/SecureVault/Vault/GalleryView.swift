@@ -86,6 +86,13 @@ struct GalleryView: View {
 
     private func shareDay(day: String, urls: [URL]) {
         guard !urls.isEmpty, !isExporting else { return }
+
+        guard SettingsStore.shared.exportAsZip else {
+            sharingItems = urls
+            showShareSheet = true
+            return
+        }
+
         isExporting = true
         DispatchQueue.global(qos: .userInitiated).async {
             let zipURL = ZipExporter.exportDay(label: day, urls: urls)
