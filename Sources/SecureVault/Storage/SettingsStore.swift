@@ -1,4 +1,3 @@
-// SettingsStore.swift
 import SwiftUI
 
 class SettingsStore: ObservableObject {
@@ -36,6 +35,14 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(accuracyThreshold, forKey: "accuracyThreshold") }
     }
 
+    @Published var distanceTrackingEnabled: Bool {
+        didSet { UserDefaults.standard.set(distanceTrackingEnabled, forKey: "distanceTrackingEnabled") }
+    }
+
+    @Published var minDistanceThreshold: Int {
+        didSet { UserDefaults.standard.set(minDistanceThreshold, forKey: "minDistanceThreshold") }
+    }
+
     private let avatarKey = "userAvatar"
 
     init() {
@@ -46,6 +53,8 @@ class SettingsStore: ObservableObject {
         lockOnBackground = UserDefaults.standard.object(forKey: "lockOnBackground") as? Bool ?? true
         accuracyProtectionEnabled = UserDefaults.standard.bool(forKey: "accuracyProtectionEnabled")
         accuracyThreshold = UserDefaults.standard.object(forKey: "accuracyThreshold") as? Int ?? 20
+        distanceTrackingEnabled = UserDefaults.standard.bool(forKey: "distanceTrackingEnabled")
+        minDistanceThreshold = UserDefaults.standard.object(forKey: "minDistanceThreshold") as? Int ?? 10
         loadAvatar()
     }
 
