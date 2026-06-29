@@ -48,6 +48,7 @@ struct CameraScreen: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
+                // Верхняя панель — координаты
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         if let loc = locationManager.location {
@@ -109,6 +110,7 @@ struct CameraScreen: View {
 
                 Spacer()
 
+                // Перекрестие — центрируется именно в свободной зоне между панелями
                 if settings.showCrosshair {
                     CrosshairView(color: settings.crosshairColor)
                 }
@@ -172,6 +174,20 @@ struct CameraScreen: View {
                 .padding(.bottom, 40)
                 .background(Color.black.opacity(0.5))
             }
+        }
+        .onAppear {
+            if settings.volumeButtonCaptureEnabled {
+                VolumeButtonHandler.shared.onTrigger = {
+                    guard !isCaptureBlocked else { return }
+                    cameraVM.capturePhoto { img in
+                        onCapture(img)
+                    }
+                }
+                VolumeButtonHandler.shared.start()
+            }
+        }
+        .onDisappear {
+            VolumeButtonHandler.shared.stop()
         }
     }
 }
