@@ -102,6 +102,11 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Съёмка") {
+                    Toggle("Снимать кнопками громкости", isOn: $store.volumeButtonCaptureEnabled)
+                        .tint(.orange)
+                }
+
                 Section("Безопасность") {
                     Toggle("Блокировать при сворачивании", isOn: $store.lockOnBackground)
                         .tint(.orange)
