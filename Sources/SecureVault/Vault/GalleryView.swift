@@ -9,6 +9,10 @@ struct GalleryView: View {
     @State private var showShareSheet = false
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 2)]
 
+    private var totalCount: Int {
+        groupedPhotos.reduce(0) { $0 + $1.1.count }
+    }
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -44,7 +48,7 @@ struct GalleryView: View {
                 }
             }
             .background(Color.black)
-            .navigationTitle("Галерея")
+            .navigationTitle(totalCount > 0 ? "Галерея (\(totalCount))" : "Галерея")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
