@@ -13,10 +13,14 @@ struct CameraScreen: View {
             CameraView(session: cameraVM.session)
                 .ignoresSafeArea()
 
-            // Перекрестие
-            if settings.showCrosshair {
-                CrosshairView(color: settings.crosshairColor)
-            }
+// Перекрестие
+if settings.showCrosshair {
+    GeometryReader { geo in
+        CrosshairView(color: settings.crosshairColor)
+            .position(x: geo.size.width / 2, y: geo.size.height / 2)
+    }
+    .ignoresSafeArea()
+}
 
             VStack(spacing: 0) {
                 // Верхняя панель — координаты
