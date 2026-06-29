@@ -43,6 +43,10 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(minDistanceThreshold, forKey: "minDistanceThreshold") }
     }
 
+    @Published var volumeButtonCaptureEnabled: Bool {
+        didSet { UserDefaults.standard.set(volumeButtonCaptureEnabled, forKey: "volumeButtonCaptureEnabled") }
+    }
+
     private let avatarKey = "userAvatar"
 
     init() {
@@ -55,6 +59,7 @@ class SettingsStore: ObservableObject {
         accuracyThreshold = UserDefaults.standard.object(forKey: "accuracyThreshold") as? Int ?? 20
         distanceTrackingEnabled = UserDefaults.standard.bool(forKey: "distanceTrackingEnabled")
         minDistanceThreshold = UserDefaults.standard.object(forKey: "minDistanceThreshold") as? Int ?? 10
+        volumeButtonCaptureEnabled = UserDefaults.standard.bool(forKey: "volumeButtonCaptureEnabled")
         loadAvatar()
     }
 
