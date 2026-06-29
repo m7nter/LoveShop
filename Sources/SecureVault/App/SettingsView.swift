@@ -1,4 +1,3 @@
-// SettingsView.swift
 import SwiftUI
 
 struct SettingsView: View {
@@ -78,6 +77,26 @@ struct SettingsView: View {
                             Text("50 м").tag(50)
                         }
                         Text("Кнопка съёмки будет заблокирована, если погрешность координат превышает выбранное значение")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Section("Дистанция между фото") {
+                    Toggle("Показывать дистанцию от последнего фото", isOn: $store.distanceTrackingEnabled)
+                        .tint(.orange)
+
+                    if store.distanceTrackingEnabled {
+                        Picker("Минимально допустимая дистанция", selection: $store.minDistanceThreshold) {
+                            Text("5 м").tag(5)
+                            Text("10 м").tag(10)
+                            Text("15 м").tag(15)
+                            Text("20 м").tag(20)
+                            Text("30 м").tag(30)
+                            Text("50 м").tag(50)
+                            Text("100 м").tag(100)
+                        }
+                        Text("На экране камеры появится дистанция от последнего сделанного фото. Если она меньше выбранного значения — сработает предупреждение")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
