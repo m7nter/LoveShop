@@ -107,6 +107,19 @@ struct SettingsView: View {
                         .tint(.orange)
                 }
 
+                Section("Экспорт фото") {
+                    Picker("Способ выгрузки", selection: $store.exportAsZip) {
+                        Text("ZIP-архивом").tag(true)
+                        Text("Отдельными файлами").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    Text(store.exportAsZip
+                         ? "Фото за день упаковываются в один ZIP-архив вместе с файлом метаданных (координаты, дата)"
+                         : "Каждое фото за день отправляется отдельным файлом без метаданных в архиве")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 Section("Безопасность") {
                     Toggle("Блокировать при сворачивании", isOn: $store.lockOnBackground)
                         .tint(.orange)
