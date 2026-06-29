@@ -120,6 +120,14 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
+                Section("Карта") {
+                    Toggle("Объединять близкие метки", isOn: $store.clusterMapPins)
+                        .tint(.orange)
+                    Text("Если фото сделаны рядом друг с другом, метки на карте будут объединяться в один кружок с числом снимков. При увеличении масштаба метки разделяются")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 Section("Безопасность") {
                     Toggle("Блокировать при сворачивании", isOn: $store.lockOnBackground)
                         .tint(.orange)
