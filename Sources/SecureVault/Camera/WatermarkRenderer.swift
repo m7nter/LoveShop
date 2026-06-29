@@ -113,9 +113,11 @@ struct WatermarkRenderer {
             let avatarImg = SettingsStore.shared.avatarImage
             let hasLabel = !(labelText ?? "").isEmpty
             let avatarSize: CGFloat = size.width * 0.22
+            var actualBottomBarH: CGFloat = 0
 
             if hasLabel || avatarImg != nil {
                 let bottomBarH = avatarSize + padding * 2
+                actualBottomBarH = bottomBarH
                 let bottomY = size.height - bottomBarH
 
                 UIColor.black.withAlphaComponent(0.55).setFill()
@@ -151,7 +153,7 @@ struct WatermarkRenderer {
             // ── ПЕРЕКРЕСТИЕ НА ФОТО ──
             if SettingsStore.shared.crosshairOnPhoto {
                 let cx = size.width / 2
-                let cy = size.height / 2
+                let cy = topBarH + (size.height - topBarH - actualBottomBarH) / 2
                 let lineLen = size.width * 0.04
                 let lineW: CGFloat = max(size.width * 0.004, 2)
 
