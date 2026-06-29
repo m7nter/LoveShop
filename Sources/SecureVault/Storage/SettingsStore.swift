@@ -1,3 +1,4 @@
+// SettingsStore.swift
 import SwiftUI
 
 class SettingsStore: ObservableObject {
@@ -27,6 +28,14 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(lockOnBackground, forKey: "lockOnBackground") }
     }
 
+    @Published var accuracyProtectionEnabled: Bool {
+        didSet { UserDefaults.standard.set(accuracyProtectionEnabled, forKey: "accuracyProtectionEnabled") }
+    }
+
+    @Published var accuracyThreshold: Int {
+        didSet { UserDefaults.standard.set(accuracyThreshold, forKey: "accuracyThreshold") }
+    }
+
     private let avatarKey = "userAvatar"
 
     init() {
@@ -35,6 +44,8 @@ class SettingsStore: ObservableObject {
         crosshairOnPhoto = UserDefaults.standard.bool(forKey: "crosshairOnPhoto")
         autoLockTimeout = UserDefaults.standard.integer(forKey: "autoLockTimeout")
         lockOnBackground = UserDefaults.standard.object(forKey: "lockOnBackground") as? Bool ?? true
+        accuracyProtectionEnabled = UserDefaults.standard.bool(forKey: "accuracyProtectionEnabled")
+        accuracyThreshold = UserDefaults.standard.object(forKey: "accuracyThreshold") as? Int ?? 20
         loadAvatar()
     }
 
