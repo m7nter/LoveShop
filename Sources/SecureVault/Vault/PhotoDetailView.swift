@@ -6,6 +6,7 @@ struct PhotoDetailView: View {
     @Environment(\.dismiss) var dismiss
     @State private var showEditor = false
     @State private var currentImage: UIImage?
+    @State private var showDeleteConfirm = false
 
     var body: some View {
         ZStack {
@@ -34,8 +35,7 @@ struct PhotoDetailView: View {
                                 .clipShape(Circle())
                         }
                         Button {
-                            onDelete()
-                            dismiss()
+                            showDeleteConfirm = true
                         } label: {
                             Image(systemName: "trash")
                                 .foregroundColor(.red)
@@ -57,6 +57,15 @@ struct PhotoDetailView: View {
                     currentImage = edited
                 }
             }
+        }
+        .alert("Удалить фото?", isPresented: $showDeleteConfirm) {
+            Button("Удалить", role: .destructive) {
+                onDelete()
+                dismiss()
+            }
+            Button("Отмена", role: .cancel) {}
+        } message: {
+            Text("Это действие нельзя отменить.")
         }
     }
 
