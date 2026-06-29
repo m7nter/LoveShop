@@ -1,3 +1,4 @@
+// CameraScreen.swift
 import SwiftUI
 import CoreLocation
 
@@ -7,6 +8,28 @@ struct CameraScreen: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject private var locationManager = LocationManager.shared
     @ObservedObject private var settings = SettingsStore.shared
+
+    private var currentAccuracy: Double? {
+        let acc = locationManager.location?.horizontalAccuracy ?? -1
+        return acc >= 0 ? acc : nil
+    }
+
+    private var captureButtonColor: Color {
+        guard let accuracy = currentAccuracy else { return .white }
+        if accuracy <= 10 {
+            return .green
+        } else if accuracy <= 20 {
+            return .orange
+        } else {
+            return .red
+        }
+    }
+
+    private var isCaptureBlocked: Bool {
+        guard settings.accuracyProtectionEnabled else { return false }
+        guard let accuracy = currentAccuracy else { return false }
+        return accuracy > Double(settings.accuracyThreshold)
+    }
 
     var body: some View {
         ZStack {
@@ -42,7 +65,7 @@ struct CameraScreen: View {
                                 .font(.system(size: 12, design: .monospaced))
                                 .foregroundColor(.white)
                             Circle()
-                                .fill(loc.horizontalAccuracy < 10 ? Color.green : Color.yellow)
+                                .fill(captureButtonColor)
                                 .frame(width: 10, height: 10)
                         }
                     }
@@ -50,6 +73,15 @@ struct CameraScreen: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(Color.black.opacity(0.5))
+
+                if isCaptureBlocked {
+                    Text("Погрешность GPS превышает \(settings.accuracyThreshold) м — съёмка заблокирована")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.red.opacity(0.85))
+                }
 
                 Spacer()
 
@@ -74,15 +106,21 @@ struct CameraScreen: View {
                         }
 
                         Button {
+                            guard !isCaptureBlocked else { return }
                             cameraVM.capturePhoto { img in
                                 onCapture(img)
                             }
                         } label: {
-                            Circle()
-                                .stroke(Color.white, lineWidth: 3)
-                                .frame(width: 72, height: 72)
-                                .overlay(Circle().fill(.white).frame(width: 60, height: 60))
+                            ZStack {
+                                Circle()
+                                    .stroke(isCaptureBlocked ? Color.gray : captureButtonColor, lineWidth: 3)
+                                    .frame(width: 72, height: 72)
+                                Circle()
+                                    .fill(isCaptureBlocked ? Color.gray.opacity(0.5) : captureButtonColor)
+                                    .frame(width: 60, height: 60)
+                            }
                         }
+                        .disabled(isCaptureBlocked)
 
                         Button {
                             cameraVM.quickMode.toggle()
