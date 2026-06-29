@@ -1,3 +1,4 @@
+// SettingsView.swift
 import SwiftUI
 
 struct SettingsView: View {
@@ -60,6 +61,25 @@ struct SettingsView: View {
                                     .onTapGesture { store.crosshairColor = colorName }
                             }
                         }
+                    }
+                }
+
+                Section("Точность GPS") {
+                    Toggle("Защита от погрешности", isOn: $store.accuracyProtectionEnabled)
+                        .tint(.orange)
+
+                    if store.accuracyProtectionEnabled {
+                        Picker("Максимальная погрешность", selection: $store.accuracyThreshold) {
+                            Text("5 м").tag(5)
+                            Text("10 м").tag(10)
+                            Text("15 м").tag(15)
+                            Text("20 м").tag(20)
+                            Text("30 м").tag(30)
+                            Text("50 м").tag(50)
+                        }
+                        Text("Кнопка съёмки будет заблокирована, если погрешность координат превышает выбранное значение")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
 
