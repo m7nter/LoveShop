@@ -8,22 +8,24 @@ struct CameraScreen: View {
     @ObservedObject private var locationManager = LocationManager.shared
     @ObservedObject private var settings = SettingsStore.shared
 
+    private var captureButtonColor: Color {
+        guard let loc = locationManager.location else { return .gray }
+        let acc = loc.horizontalAccuracy
+        if acc <= 10 { return .green }
+        if acc <= 20 { return .orange }
+        return .red
+    }
+
     var body: some View {
         ZStack {
             CameraView(session: cameraVM.session)
                 .ignoresSafeArea()
 
-// Перекрестие
-if settings.showCrosshair {
-    GeometryReader { geo in
-        CrosshairView(color: settings.crosshairColor)
-            .position(x: geo.size.width / 2, y: geo.size.height / 2)
-    }
-    .ignoresSafeArea()
-}
+            if settings.showCrosshair {
+                CrosshairView(color: settings.crosshairColor)
+            }
 
             VStack(spacing: 0) {
-                // Верхняя панель — координаты
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         if let loc = locationManager.location {
@@ -75,15 +77,23 @@ if settings.showCrosshair {
                                 .clipShape(Circle())
                         }
 
+                        // Кнопка съёмки с цветом по точности GPS
                         Button {
                             cameraVM.capturePhoto { img in
                                 onCapture(img)
                             }
                         } label: {
-                            Circle()
-                                .stroke(Color.white, lineWidth: 3)
-                                .frame(width: 72, height: 72)
-                                .overlay(Circle().fill(.white).frame(width: 60, height: 60))
+                            ZStack {
+                                Circle()
+                                    .fill(captureButtonColor.opacity(0.3))
+                                    .frame(width: 78, height: 78)
+                                Circle()
+                                    .stroke(captureButtonColor, lineWidth: 3)
+                                    .frame(width: 72, height: 72)
+                                Circle()
+                                    .fill(captureButtonColor)
+                                    .frame(width: 60, height: 60)
+                            }
                         }
 
                         Button {
