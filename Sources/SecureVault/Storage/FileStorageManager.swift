@@ -27,7 +27,6 @@ final class FileStorageManager {
         let url = vaultDirectory.appendingPathComponent("\(name).jpg")
         try? data.write(to: url)
 
-        // Сохраняем метаданные рядом
         if let loc = location {
             let meta = PhotoMeta(
                 latitude: loc.coordinate.latitude,
@@ -69,9 +68,13 @@ final class FileStorageManager {
         return loadAll().map { ($0, loadMeta(for: $0)) }
     }
 
+    func lastPhotoLocation() -> CLLocation? {
+        guard let (_, meta) = loadAllWithMeta().first, let m = meta else { return nil }
+        return CLLocation(latitude: m.latitude, longitude: m.longitude)
+    }
+
     func delete(url: URL) {
         try? FileManager.default.removeItem(at: url)
-        // Удаляем метаданные
         let name = url.deletingPathExtension().lastPathComponent
         let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
         try? FileManager.default.removeItem(at: metaURL)
