@@ -48,17 +48,6 @@ struct PhotoEditorView: View {
                     .onAppear { canvasSize = geo.size }
                 }
 
-                if !store.selected.isEmpty {
-                    VStack {
-                        Spacer()
-                        Text(store.selected)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white)
-                            .shadow(color: .black, radius: 2)
-                            .padding(.bottom, 60)
-                    }
-                }
-
                 if isSaving {
                     Color.black.opacity(0.4).ignoresSafeArea()
                     ProgressView()
