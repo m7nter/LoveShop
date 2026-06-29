@@ -1,4 +1,3 @@
-// CameraScreen.swift
 import SwiftUI
 import CoreLocation
 
@@ -31,13 +30,24 @@ struct CameraScreen: View {
         return accuracy > Double(settings.accuracyThreshold)
     }
 
+    private var distanceFromLastPhoto: Double? {
+        guard settings.distanceTrackingEnabled else { return nil }
+        guard let current = locationManager.location else { return nil }
+        guard let last = FileStorageManager.shared.lastPhotoLocation() else { return nil }
+        return current.distance(from: last)
+    }
+
+    private var isDistanceViolation: Bool {
+        guard let d = distanceFromLastPhoto else { return false }
+        return d < Double(settings.minDistanceThreshold)
+    }
+
     var body: some View {
         ZStack {
             CameraView(session: cameraVM.session)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Верхняя панель — координаты
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         if let loc = locationManager.location {
@@ -56,6 +66,11 @@ struct CameraScreen: View {
                             Text(String(format: "AZM: %d° %@", Int(hdg.magneticHeading), dir))
                                 .font(.system(size: 12, weight: .regular, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.85))
+                        }
+                        if let distance = distanceFromLastPhoto {
+                            Text(String(format: "До посл. фото: %.0f м", distance))
+                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                .foregroundColor(isDistanceViolation ? .red : .green)
                         }
                     }
                     Spacer()
@@ -83,9 +98,17 @@ struct CameraScreen: View {
                         .background(Color.red.opacity(0.85))
                 }
 
+                if isDistanceViolation {
+                    Text("Слишком близко к последнему фото — минимум \(settings.minDistanceThreshold) м")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.red.opacity(0.85))
+                }
+
                 Spacer()
 
-                // Перекрестие — центрируется именно в свободной зоне между панелями
                 if settings.showCrosshair {
                     CrosshairView(color: settings.crosshairColor)
                 }
