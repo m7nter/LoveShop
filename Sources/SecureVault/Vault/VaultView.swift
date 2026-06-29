@@ -9,6 +9,8 @@ struct VaultView: View {
     @State private var showGallery = false
     @State private var showVaultLock = false
     @State private var showMap = false
+    @State private var showNotes = false
+    @State private var pendingDestination: VaultDestination?
     @StateObject private var cameraVM = CameraViewModel()
 
     var onLock: () -> Void
@@ -32,18 +34,16 @@ struct VaultView: View {
                             showCamera = true
                         }
                         VaultActionButton(icon: "photo.on.rectangle", label: "Галерея") {
-                            let store = SettingsStore.shared
-                            if store.vaultCodeEnabled && !store.vaultCode.isEmpty {
-                                showVaultLock = true
-                            } else {
-                                showGallery = true
-                            }
+                            requestAccess(to: .gallery)
                         }
                     }
 
                     HStack(spacing: 16) {
                         VaultActionButton(icon: "map.fill", label: "Карта меток") {
                             showMap = true
+                        }
+                        VaultActionButton(icon: "note.text", label: "Дневник") {
+                            requestAccess(to: .notes)
                         }
                     }
 
@@ -98,16 +98,43 @@ struct VaultView: View {
         .fullScreenCover(isPresented: $showGallery) {
             GalleryView()
         }
+        .fullScreenCover(isPresented: $showNotes) {
+            NotesListView()
+        }
         .fullScreenCover(isPresented: $showVaultLock) {
             VaultLockView {
                 showVaultLock = false
-                showGallery = true
+                switch pendingDestination {
+                case .gallery: showGallery = true
+                case .notes: showNotes = true
+                case .none: break
+                }
+                pendingDestination = nil
             } onCancel: {
                 showVaultLock = false
+                pendingDestination = nil
             }
         }
         .fullScreenCover(isPresented: $showMap) {
             PhotoMapView()
+        }
+    }
+
+    private enum VaultDestination {
+        case gallery
+        case notes
+    }
+
+    private func requestAccess(to destination: VaultDestination) {
+        let store = SettingsStore.shared
+        if store.vaultCodeEnabled && !store.vaultCode.isEmpty {
+            pendingDestination = destination
+            showVaultLock = true
+        } else {
+            switch destination {
+            case .gallery: showGallery = true
+            case .notes: showNotes = true
+            }
         }
     }
 }
