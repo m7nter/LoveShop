@@ -47,6 +47,10 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(volumeButtonCaptureEnabled, forKey: "volumeButtonCaptureEnabled") }
     }
 
+    @Published var exportAsZip: Bool {
+        didSet { UserDefaults.standard.set(exportAsZip, forKey: "exportAsZip") }
+    }
+
     private let avatarKey = "userAvatar"
 
     init() {
@@ -60,6 +64,7 @@ class SettingsStore: ObservableObject {
         distanceTrackingEnabled = UserDefaults.standard.bool(forKey: "distanceTrackingEnabled")
         minDistanceThreshold = UserDefaults.standard.object(forKey: "minDistanceThreshold") as? Int ?? 10
         volumeButtonCaptureEnabled = UserDefaults.standard.bool(forKey: "volumeButtonCaptureEnabled")
+        exportAsZip = UserDefaults.standard.object(forKey: "exportAsZip") as? Bool ?? true
         loadAvatar()
     }
 
