@@ -164,7 +164,7 @@ struct CalculatorButton: View {
         }
         .simultaneousGesture(
             title == "⌫" ?
-            LongPressGesture(minimumDuration: 1.0)
+            LongPressGesture(minimumDuration: 0.5)
                 .onEnded { _ in
                     playClick()
                     vm.tap("AC")
