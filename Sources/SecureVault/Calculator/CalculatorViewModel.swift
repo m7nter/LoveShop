@@ -11,6 +11,8 @@ class CalculatorViewModel: ObservableObject {
     private var storedValue: Double = 0
     private var currentOperator: String? = nil
     private var shouldResetDisplay = false
+    private var lastOperator: String? = nil
+    private var lastOperand: Double = 0
 
     var clearButtonTitle: String {
         currentInput.isEmpty && display == "0" ? "AC" : "C"
@@ -115,7 +117,33 @@ class CalculatorViewModel: ObservableObject {
         }
 
         guard let op = currentOperator,
-              let rhs = Double(currentInput) else { return }
+              let rhs = Double(currentInput) else {
+            // Повторное нажатие "=" — повторяем последнюю операцию
+            if let op = lastOperator {
+                let rhs = lastOperand
+                let result: Double
+                switch op {
+                case "+": result = storedValue + rhs
+                case "−": result = storedValue - rhs
+                case "×": result = storedValue * rhs
+                case "÷": result = rhs != 0 ? storedValue / rhs : 0
+                default: return
+                }
+
+                let entry = "\(formatted(storedValue))  \(op)  \(formatted(rhs)) = \(formatted(result))"
+                history.append(entry)
+                expression = "\(formatted(storedValue))  \(op)  \(formatted(rhs))"
+
+                storedValue = result
+                currentInput = formatResult(result)
+                display = formatted(result)
+                shouldResetDisplay = true
+            }
+            return
+        }
+
+        lastOperator = op
+        lastOperand = rhs
 
         let result: Double
         switch op {
@@ -151,6 +179,8 @@ class CalculatorViewModel: ObservableObject {
         storedValue = 0
         currentOperator = nil
         shouldResetDisplay = false
+        lastOperator = nil
+        lastOperand = 0
     }
 
     private func toggleSign() {
@@ -162,10 +192,15 @@ class CalculatorViewModel: ObservableObject {
     }
 
     private func handlePercent() {
-        if let v = Double(currentInput) {
-            let pct = v / 100
-            currentInput = formatResult(pct)
-            display = formatted(pct)
+        guard let v = Double(currentInput) else { return }
+        let pct: Double
+        if let op = currentOperator, (op == "+" || op == "−") {
+            // Процент от первого числа (как в стандартном калькуляторе)
+            pct = storedValue * (v / 100)
+        } else {
+            pct = v / 100
         }
+        currentInput = formatResult(pct)
+        display = formatted(pct)
     }
 }
