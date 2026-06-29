@@ -7,6 +7,7 @@ struct GalleryView: View {
     @State private var showSettings = false
     @State private var sharingItems: [Any] = []
     @State private var showShareSheet = false
+    @State private var isExporting = false
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 2)]
 
     private var totalCount: Int {
@@ -33,12 +34,18 @@ struct GalleryView: View {
                                     .foregroundColor(.white)
                                 Spacer()
                                 Button {
-                                    shareDay(urls: urls)
+                                    shareDay(day: day, urls: urls)
                                 } label: {
-                                    Image(systemName: "square.and.arrow.up")
-                                        .foregroundColor(.orange)
-                                        .font(.system(size: 16))
+                                    if isExporting {
+                                        ProgressView()
+                                            .tint(.orange)
+                                    } else {
+                                        Image(systemName: "square.and.arrow.up")
+                                            .foregroundColor(.orange)
+                                            .font(.system(size: 16))
+                                    }
                                 }
+                                .disabled(isExporting)
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
@@ -77,11 +84,18 @@ struct GalleryView: View {
         }
     }
 
-    private func shareDay(urls: [URL]) {
-        guard !urls.isEmpty else { return }
-        sharingItems = urls
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            showShareSheet = true
+    private func shareDay(day: String, urls: [URL]) {
+        guard !urls.isEmpty, !isExporting else { return }
+        isExporting = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let zipURL = ZipExporter.exportDay(label: day, urls: urls)
+            DispatchQueue.main.async {
+                isExporting = false
+                if let zipURL = zipURL {
+                    sharingItems = [zipURL]
+                    showShareSheet = true
+                }
+            }
         }
     }
 
