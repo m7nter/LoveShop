@@ -1,204 +1,206 @@
-import SwiftUI
-import AudioToolbox
+import Foundation
+import Combine
 
-struct CalculatorView: View {
-    @StateObject private var vm = CalculatorViewModel()
-    var onUnlock: () -> Void
-    @State private var showHistory = false
+class CalculatorViewModel: ObservableObject {
+    @Published var display: String = "0"
+    @Published var expression: String = ""
+    @Published var shouldUnlock: Bool = false
+    @Published var history: [String] = []
 
-    private let buttons: [[String]] = [
-        ["⌫", "CLEAR", "%", "÷"],
-        ["7", "8", "9", "×"],
-        ["4", "5", "6", "−"],
-        ["1", "2", "3", "+"],
-        ["+/−", "0", ",", "="]
-    ]
+    private var currentInput: String = ""
+    private var storedValue: Double = 0
+    private var currentOperator: String? = nil
+    private var shouldResetDisplay = false
+    private var lastOperator: String? = nil
+    private var lastOperand: Double = 0
 
-    var body: some View {
-        GeometryReader { geo in
-            let spacing: CGFloat = 8
-            let btnSize = (geo.size.width - spacing * 5) / 4
-
-            ZStack {
-                Color.black.ignoresSafeArea()
-
-                VStack {
-                    HStack {
-                        Button {
-                            showHistory = true
-                        } label: {
-                            Image(systemName: "clock")
-                                .font(.system(size: 22, weight: .regular))
-                                .foregroundColor(.white.opacity(0.8))
-                                .frame(width: 44, height: 44)
-                        }
-                        .padding(.leading, 16)
-
-                        Spacer()
-
-                        Button {
-                        } label: {
-                            Image(systemName: "plus.forwardslash.minus")
-                                .font(.system(size: 22, weight: .regular))
-                                .foregroundColor(.white.opacity(0.8))
-                                .frame(width: 44, height: 44)
-                        }
-                        .padding(.trailing, 16)
-                    }
-                    .padding(.top, geo.safeAreaInsets.top + 48)
-                    Spacer()
-                }
-
-                VStack(spacing: 0) {
-                    Spacer()
-
-                    if !vm.expression.isEmpty {
-                        Text(vm.expression)
-                            .font(.system(size: 22, weight: .regular))
-                            .foregroundColor(.gray)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.horizontal, 28)
-                            .padding(.bottom, 4)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                    }
-
-                    Text(vm.display)
-                        .font(.system(size: 72, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 12)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.3)
-
-                    VStack(spacing: spacing) {
-                        ForEach(buttons, id: \.self) { row in
-                            HStack(spacing: spacing) {
-                                ForEach(row, id: \.self) { btn in
-                                    CalculatorButton(
-                                        title: btn == "CLEAR" ? vm.clearButtonTitle : btn,
-                                        vm: vm,
-                                        size: btnSize,
-                                        spacing: spacing
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, spacing)
-                    .padding(.bottom, geo.safeAreaInsets.bottom + 48)
-                }
-            }
-        }
-        .ignoresSafeArea()
-        .onChange(of: vm.shouldUnlock) { val in
-            if val { onUnlock() }
-        }
-        .sheet(isPresented: $showHistory) {
-            HistoryView(history: vm.history)
-        }
-    }
-}
-
-struct CalculatorButton: View {
-    let title: String
-    @ObservedObject var vm: CalculatorViewModel
-    let size: CGFloat
-    let spacing: CGFloat
-
-    private var bgColor: Color {
-        switch title {
-        case "⌫", "AC", "C", "%", "+/−":
-            return Color(red: 0.33, green: 0.33, blue: 0.33)
-        case "÷", "×", "−", "+", "=":
-            return Color(red: 1.0, green: 0.62, blue: 0.04)
-        default:
-            return Color(red: 0.18, green: 0.18, blue: 0.18)
-        }
+    var clearButtonTitle: String {
+        currentInput.isEmpty && display == "0" ? "AC" : "C"
     }
 
-    private var label: some View {
-        Group {
-            switch title {
-            case "⌫":
-                Image(systemName: "delete.left")
-                    .font(.system(size: size * 0.32, weight: .regular))
-                    .foregroundColor(.white)
-            case "=":
-                Text("=")
-                    .font(.system(size: size * 0.42, weight: .bold))
-                    .foregroundColor(.white)
-            case "÷", "×", "−", "+":
-                Text(title)
-                    .font(.system(size: size * 0.42, weight: .regular))
-                    .foregroundColor(.white)
-            default:
-                Text(title)
-                    .font(.system(size: size * 0.36, weight: .regular))
-                    .foregroundColor(.white)
-            }
-        }
-    }
-
-    private func playClick() {
-        switch title {
+    func tap(_ symbol: String) {
+        switch symbol {
+        case "0"..."9":
+            handleDigit(symbol)
+        case ",", ".":
+            handleDigit(".")
+        case "+", "−", "×", "÷":
+            handleOperator(symbol)
+        case "=":
+            handleEquals()
+        case "AC":
+            reset()
+        case "C":
+            clearCurrent()
         case "⌫":
-            AudioServicesPlaySystemSound(1155)
-        case "AC", "C", "+/−", "%":
-            AudioServicesPlaySystemSound(1156)
+            handleBackspace()
+        case "+/−":
+            toggleSign()
+        case "%":
+            handlePercent()
         default:
-            AudioServicesPlaySystemSound(1123)
+            break
         }
     }
 
-    var body: some View {
-        Button {
-            playClick()
-            vm.tap(title)
-        } label: {
-            label
-                .frame(width: size, height: size)
-                .background(bgColor)
-                .clipShape(Circle())
-        }
-        .simultaneousGesture(
-            title == "⌫" ?
-            LongPressGesture(minimumDuration: 1.0)
-                .onEnded { _ in
-                    playClick()
-                    vm.tap("AC")
-                }
-            : nil
-        )
+    private func clearCurrent() {
+        currentInput = ""
+        display = "0"
     }
-}
 
-struct HistoryView: View {
-    let history: [String]
-    @Environment(\.dismiss) var dismiss
+    private func formatted(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = " "
+        formatter.decimalSeparator = ","
+        formatter.maximumFractionDigits = 6
+        formatter.groupingSize = 3
+        return formatter.string(from: NSNumber(value: value)) ?? formatResult(value)
+    }
 
-    var body: some View {
-        NavigationView {
-            List {
-                if history.isEmpty {
-                    Text("История пуста")
-                        .foregroundColor(.secondary)
-                } else {
-                    ForEach(history.reversed(), id: \.self) { item in
-                        Text(item)
-                            .font(.system(size: 16, design: .monospaced))
-                    }
-                }
-            }
-            .navigationTitle("История")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Готово") { dismiss() }
-                        .foregroundColor(.orange)
-                }
+    private func handleDigit(_ d: String) {
+        if d == "." && currentInput.contains(".") { return }
+        if shouldResetDisplay {
+            currentInput = d == "." ? "0." : d
+            shouldResetDisplay = false
+        } else {
+            if currentInput == "0" && d != "." {
+                currentInput = d
+            } else {
+                if currentInput.count < 9 { currentInput += d }
             }
         }
+        if let val = Double(currentInput) {
+            display = formatted(val)
+        } else {
+            display = currentInput.replacingOccurrences(of: ".", with: ",")
+        }
+    }
+
+    private func handleBackspace() {
+        if !currentInput.isEmpty {
+            currentInput.removeLast()
+            if currentInput.isEmpty || currentInput == "-" { currentInput = "0" }
+            if let val = Double(currentInput) {
+                display = formatted(val)
+            } else {
+                display = currentInput.replacingOccurrences(of: ".", with: ",")
+            }
+        }
+    }
+
+    private func handleOperator(_ op: String) {
+        if !currentInput.isEmpty {
+            storedValue = Double(currentInput) ?? 0
+        }
+        expression = "\(formatted(storedValue))  \(op)"
+        currentOperator = op
+        shouldResetDisplay = true
+        currentInput = ""
+    }
+
+    private func handleEquals() {
+        let store = SettingsStore.shared
+        let input = currentInput.isEmpty ? display : currentInput
+
+        if store.kamikazeCodeEnabled && !store.kamikazeCode.isEmpty && input == store.kamikazeCode {
+            let urls = FileStorageManager.shared.loadAll()
+            for url in urls { FileStorageManager.shared.delete(url: url) }
+            reset()
+            return
+        }
+
+        if input == store.mainCode {
+            shouldUnlock = true
+            reset()
+            return
+        }
+
+        guard let op = currentOperator,
+              let rhs = Double(currentInput) else {
+            // Повторное нажатие "=" — повторяем последнюю операцию
+            if let op = lastOperator {
+                let rhs = lastOperand
+                let result: Double
+                switch op {
+                case "+": result = storedValue + rhs
+                case "−": result = storedValue - rhs
+                case "×": result = storedValue * rhs
+                case "÷": result = rhs != 0 ? storedValue / rhs : 0
+                default: return
+                }
+
+                let entry = "\(formatted(storedValue))  \(op)  \(formatted(rhs)) = \(formatted(result))"
+                history.append(entry)
+                expression = "\(formatted(storedValue))  \(op)  \(formatted(rhs))"
+
+                storedValue = result
+                currentInput = formatResult(result)
+                display = formatted(result)
+                shouldResetDisplay = true
+            }
+            return
+        }
+
+        lastOperator = op
+        lastOperand = rhs
+
+        let result: Double
+        switch op {
+        case "+": result = storedValue + rhs
+        case "−": result = storedValue - rhs
+        case "×": result = storedValue * rhs
+        case "÷": result = rhs != 0 ? storedValue / rhs : 0
+        default: return
+        }
+
+        let entry = "\(formatted(storedValue))  \(op)  \(formatted(rhs)) = \(formatted(result))"
+        history.append(entry)
+        expression = "\(formatted(storedValue))  \(op)  \(formatted(rhs))"
+
+        storedValue = result
+        currentInput = formatResult(result)
+        display = formatted(result)
+        currentOperator = nil
+        shouldResetDisplay = true
+    }
+
+    private func formatResult(_ v: Double) -> String {
+        if v.truncatingRemainder(dividingBy: 1) == 0 && abs(v) < 1e9 {
+            return String(Int(v))
+        }
+        return String(format: "%.6g", v)
+    }
+
+    private func reset() {
+        display = "0"
+        expression = ""
+        currentInput = ""
+        storedValue = 0
+        currentOperator = nil
+        shouldResetDisplay = false
+        lastOperator = nil
+        lastOperand = 0
+    }
+
+    private func toggleSign() {
+        if let v = Double(currentInput) {
+            let toggled = -v
+            currentInput = formatResult(toggled)
+            display = formatted(toggled)
+        }
+    }
+
+    private func handlePercent() {
+        guard let v = Double(currentInput) else { return }
+        let pct: Double
+        if let op = currentOperator, (op == "+" || op == "−") {
+            // Процент от первого числа (как в стандартном калькуляторе)
+            pct = storedValue * (v / 100)
+        } else {
+            pct = v / 100
+        }
+        currentInput = formatResult(pct)
+        display = formatted(pct)
     }
 }
