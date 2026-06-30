@@ -9,7 +9,7 @@ struct PhotoPin: Identifiable {
 }
 
 struct PinCluster: Identifiable {
-    let id = UUID()
+    let id: String
     let coordinate: CLLocationCoordinate2D
     let pins: [PhotoPin]
 }
@@ -183,26 +183,36 @@ struct PhotoMapView: View {
 
     private func clusteredPins(pins: [PhotoPin], span: MKCoordinateSpan) -> [PinCluster] {
         guard settings.clusterMapPins, pins.count > 1 else {
-            return pins.map { PinCluster(coordinate: $0.coordinate, pins: [$0]) }
+            return pins.map { PinCluster(id: $0.id.uuidString, coordinate: $0.coordinate, pins: [$0]) }
         }
 
-        let gridSize = max(span.latitudeDelta, span.longitudeDelta) / 25
+        // Квантуем масштаб ступенями (по степеням двойки), чтобы кластеры
+        // не пересчитывались на каждый пиксель во время непрерывного зума —
+        // именно это раньше вызывало "мигание" меток.
+        let rawSpan = max(span.latitudeDelta, span.longitudeDelta)
+        guard rawSpan > 0 else {
+            return pins.map { PinCluster(id: $0.id.uuidString, coordinate: $0.coordinate, pins: [$0]) }
+        }
+        let zoomLevel = floor(log2(rawSpan))
+        let steppedSpan = pow(2.0, zoomLevel)
+        let gridSize = steppedSpan / 20
         guard gridSize > 0 else {
-            return pins.map { PinCluster(coordinate: $0.coordinate, pins: [$0]) }
+            return pins.map { PinCluster(id: $0.id.uuidString, coordinate: $0.coordinate, pins: [$0]) }
         }
 
         var buckets: [String: [PhotoPin]] = [:]
         for pin in pins {
             let latKey = Int((pin.coordinate.latitude / gridSize).rounded())
             let lonKey = Int((pin.coordinate.longitude / gridSize).rounded())
-            let key = "\(latKey)_\(lonKey)"
+            let key = "\(Int(zoomLevel))_\(latKey)_\(lonKey)"
             buckets[key, default: []].append(pin)
         }
 
-        return buckets.values.map { group in
+        return buckets.map { key, group in
             let avgLat = group.map { $0.coordinate.latitude }.reduce(0, +) / Double(group.count)
             let avgLon = group.map { $0.coordinate.longitude }.reduce(0, +) / Double(group.count)
             return PinCluster(
+                id: key,
                 coordinate: CLLocationCoordinate2D(latitude: avgLat, longitude: avgLon),
                 pins: group
             )
