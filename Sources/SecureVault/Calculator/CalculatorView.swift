@@ -38,7 +38,7 @@ struct CalculatorView: View {
 
                         Button {
                         } label: {
-                            Image(systemName: "plus.forwardslash.minus")
+                            Image(systemName: "calculator")
                                 .font(.system(size: 22, weight: .regular))
                                 .foregroundColor(.white.opacity(0.8))
                                 .frame(width: 44, height: 44)
