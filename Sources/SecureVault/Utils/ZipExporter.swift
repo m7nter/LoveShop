@@ -22,7 +22,9 @@ struct ZipExporter {
 
             for url in urls {
                 let destURL = workDir.appendingPathComponent(url.lastPathComponent)
-                try? fm.copyItem(at: url, to: destURL)
+                if let decrypted = FileStorageManager.shared.decryptedData(for: url) {
+                    try? decrypted.write(to: destURL)
+                }
 
                 if let meta = FileStorageManager.shared.loadMeta(for: url) {
                     let dateStr = dateFormatter.string(from: meta.date)
