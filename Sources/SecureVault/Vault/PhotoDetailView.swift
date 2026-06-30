@@ -8,11 +8,10 @@ struct PhotoDetailView: View {
     @Environment(\.dismiss) var dismiss
     @State private var currentIndex: Int
     @State private var showEditor = false
-    @State private var currentImage: UIImage?
     @State private var showDeleteConfirm = false
-    @State private var dragOffset: CGFloat = 0
     @State private var showNoteEditor = false
     @State private var noteText: String = ""
+    @State private var refreshToken = UUID()
 
     init(urls: [URL], initialIndex: Int, onDelete: @escaping (URL) -> Void) {
         self.urls = urls
@@ -32,14 +31,16 @@ struct PhotoDetailView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            if let img = currentImage {
-                Image(uiImage: img)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .offset(x: dragOffset)
-                    .animation(.interactiveSpring(), value: dragOffset)
+
+            TabView(selection: $currentIndex) {
+                ForEach(Array(urls.enumerated()), id: \.offset) { index, url in
+                    PhotoPageView(url: url, refreshToken: refreshToken)
+                        .tag(index)
+                }
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea()
+
             VStack {
                 HStack {
                     Button("Закрыть") { dismiss() }
@@ -112,30 +113,12 @@ struct PhotoDetailView: View {
 
                 Spacer()
             }
+            .allowsHitTesting(true)
         }
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 20)
-                .onChanged { value in
-                    dragOffset = value.translation.width
-                }
-                .onEnded { value in
-                    let threshold: CGFloat = 80
-                    if value.translation.width < -threshold, currentIndex < urls.count - 1 {
-                        currentIndex += 1
-                        loadImage()
-                    } else if value.translation.width > threshold, currentIndex > 0 {
-                        currentIndex -= 1
-                        loadImage()
-                    }
-                    dragOffset = 0
-                }
-        )
-        .onAppear { loadImage() }
         .sheet(isPresented: $showEditor) {
-            if let img = currentImage {
-                GalleryEditorView(image: img, url: currentURL) { edited in
-                    currentImage = edited
+            if let data = try? Data(contentsOf: currentURL), let img = UIImage(data: data) {
+                GalleryEditorView(image: img, url: currentURL) { _ in
+                    refreshToken = UUID()
                 }
             }
         }
@@ -155,13 +138,34 @@ struct PhotoDetailView: View {
             Text("Это действие нельзя отменить.")
         }
     }
+}
 
-    private func loadImage() {
-        guard let data = try? Data(contentsOf: currentURL) else {
-            currentImage = nil
+private struct PhotoPageView: View {
+    let url: URL
+    let refreshToken: UUID
+    @State private var image: UIImage?
+
+    var body: some View {
+        Group {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Color.black
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { load() }
+        .onChange(of: refreshToken) { _ in load() }
+    }
+
+    private func load() {
+        guard let data = try? Data(contentsOf: url) else {
+            image = nil
             return
         }
-        currentImage = UIImage(data: data)
+        image = UIImage(data: data)
     }
 }
 
