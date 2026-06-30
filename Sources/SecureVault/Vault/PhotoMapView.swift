@@ -57,8 +57,7 @@ struct PhotoMapView: View {
                             selectedPin = pin
                         } label: {
                             VStack(spacing: 2) {
-                                if let data = try? Data(contentsOf: pin.url),
-                                   let img = UIImage(data: data) {
+                                if let img = FileStorageManager.shared.loadImage(at: pin.url) {
                                     Image(uiImage: img)
                                         .resizable()
                                         .scaledToFill()
@@ -141,8 +140,7 @@ struct PhotoMapView: View {
                 VStack {
                     Spacer()
                     HStack {
-                        if let data = try? Data(contentsOf: pin.url),
-                           let img = UIImage(data: data) {
+                        if let img = FileStorageManager.shared.loadImage(at: pin.url) {
                             Image(uiImage: img)
                                 .resizable()
                                 .scaledToFill()
