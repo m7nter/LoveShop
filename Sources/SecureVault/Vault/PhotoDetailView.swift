@@ -116,7 +116,7 @@ struct PhotoDetailView: View {
             .allowsHitTesting(true)
         }
         .sheet(isPresented: $showEditor) {
-            if let data = try? Data(contentsOf: currentURL), let img = UIImage(data: data) {
+            if let img = FileStorageManager.shared.loadImage(at: currentURL) {
                 GalleryEditorView(image: img, url: currentURL) { _ in
                     refreshToken = UUID()
                 }
@@ -161,11 +161,7 @@ private struct PhotoPageView: View {
     }
 
     private func load() {
-        guard let data = try? Data(contentsOf: url) else {
-            image = nil
-            return
-        }
-        image = UIImage(data: data)
+        image = FileStorageManager.shared.loadImage(at: url)
     }
 }
 
