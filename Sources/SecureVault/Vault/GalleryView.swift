@@ -203,8 +203,16 @@ struct GalleryView: View {
         guard !urls.isEmpty, !isExporting else { return }
 
         guard SettingsStore.shared.exportAsZip else {
-            sharingItems = urls
-            showShareSheet = true
+            isExporting = true
+            DispatchQueue.global(qos: .userInitiated).async {
+                let plainURLs = decryptedTempCopies(of: urls)
+                DispatchQueue.main.async {
+                    isExporting = false
+                    guard !plainURLs.isEmpty else { return }
+                    sharingItems = plainURLs
+                    showShareSheet = true
+                }
+            }
             return
         }
 
@@ -225,8 +233,16 @@ struct GalleryView: View {
         guard !urls.isEmpty, !isExporting else { return }
 
         guard SettingsStore.shared.exportAsZip else {
-            sharingItems = urls
-            showShareSheet = true
+            isExporting = true
+            DispatchQueue.global(qos: .userInitiated).async {
+                let plainURLs = decryptedTempCopies(of: urls)
+                DispatchQueue.main.async {
+                    isExporting = false
+                    guard !plainURLs.isEmpty else { return }
+                    sharingItems = plainURLs
+                    showShareSheet = true
+                }
+            }
             return
         }
 
@@ -241,6 +257,21 @@ struct GalleryView: View {
                 }
             }
         }
+    }
+
+    /// Файлы в хранилище зашифрованы — для "отдельными файлами" шарим
+    /// заранее расшифрованные временные копии, иначе получатель увидит
+    /// нечитаемый шифротекст вместо фото.
+    private func decryptedTempCopies(of urls: [URL]) -> [URL] {
+        let tmpDir = FileManager.default.temporaryDirectory
+        var result: [URL] = []
+        for url in urls {
+            guard let data = FileStorageManager.shared.decryptedData(for: url) else { continue }
+            let dest = tmpDir.appendingPathComponent(url.lastPathComponent)
+            try? data.write(to: dest)
+            result.append(dest)
+        }
+        return result
     }
 
     private func reload() {
@@ -287,16 +318,20 @@ struct ThumbnailCell: View {
     let url: URL
     var isSelecting: Bool = false
     var isSelected: Bool = false
+    @State private var image: UIImage?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            if let data = try? Data(contentsOf: url), let img = UIImage(data: data) {
-                Image(uiImage: img)
+            if let image = image {
+                Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 110, height: 110)
                     .clipped()
                     .opacity(isSelecting && !isSelected ? 0.55 : 1.0)
+            } else {
+                Color.gray.opacity(0.15)
+                    .frame(width: 110, height: 110)
             }
             if isSelecting {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -304,6 +339,11 @@ struct ThumbnailCell: View {
                     .foregroundColor(isSelected ? .orange : .white)
                     .background(Circle().fill(Color.black.opacity(0.5)).frame(width: 22, height: 22))
                     .padding(6)
+            }
+        }
+        .onAppear {
+            if image == nil {
+                image = FileStorageManager.shared.loadImage(at: url)
             }
         }
     }
