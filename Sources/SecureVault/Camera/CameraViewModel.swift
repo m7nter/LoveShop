@@ -1,6 +1,7 @@
 import AVFoundation
 import UIKit
 import Combine
+import CoreLocation
 
 final class CameraViewModel: NSObject, ObservableObject {
     @Published var capturedImage: UIImage?
@@ -10,7 +11,7 @@ final class CameraViewModel: NSObject, ObservableObject {
 
     let session = AVCaptureSession()
     private var photoOutput = AVCapturePhotoOutput()
-    private var completion: ((UIImage) -> Void)?
+    private var completion: ((UIImage, CLLocation?, CLHeading?) -> Void)?
 
     override init() {
         super.init()
@@ -47,7 +48,12 @@ final class CameraViewModel: NSObject, ObservableObject {
         device.unlockForConfiguration()
     }
 
-    func capturePhoto(completion: @escaping (UIImage) -> Void) {
+    /// Возвращает СЫРОЕ фото без впечатанного водяного знака.
+    /// Координаты/азимут зафиксированы на момент съёмки и передаются отдельно,
+    /// а сам watermark (включая подпись-шаблон) накладывается позже —
+    /// либо сразу (быстрый режим), либо при сохранении в редакторе
+    /// (это позволяет выбрать актуальный шаблон уже после съёмки).
+    func capturePhoto(completion: @escaping (UIImage, CLLocation?, CLHeading?) -> Void) {
         self.completion = completion
         let settings = AVCapturePhotoSettings()
         photoOutput.capturePhoto(with: settings, delegate: self)
@@ -63,8 +69,8 @@ extension CameraViewModel: AVCapturePhotoCaptureDelegate {
 
         let loc = LocationManager.shared.location
         let hdg = LocationManager.shared.heading
-        let label = UserDefaults.standard.string(forKey: "selectedTemplate").flatMap { $0.isEmpty ? nil : $0 }
-        let watermarked = WatermarkRenderer.apply(to: img, location: loc, heading: hdg, labelText: label)
-        DispatchQueue.main.async { self.completion?(watermarked) }
+        DispatchQueue.main.async {
+            self.completion?(img, loc, hdg)
+        }
     }
 }
