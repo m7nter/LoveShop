@@ -20,14 +20,19 @@ final class NotesManager {
         fileURL = folder.appendingPathComponent("notes.json")
     }
 
+    /// Заметки (в том числе пароли) хранятся на диске в зашифрованном виде.
+    /// Если файл был создан ДО включения шифрования, пробуем прочитать
+    /// его как обычный JSON, чтобы не потерять старые заметки.
     func loadAll() -> [Note] {
-        guard let data = try? Data(contentsOf: fileURL) else { return [] }
-        return (try? JSONDecoder().decode([Note].self, from: data)) ?? []
+        guard let raw = try? Data(contentsOf: fileURL) else { return [] }
+        let plain = CryptoManager.decrypt(raw) ?? raw
+        return (try? JSONDecoder().decode([Note].self, from: plain)) ?? []
     }
 
     private func saveAll(_ notes: [Note]) {
-        guard let data = try? JSONEncoder().encode(notes) else { return }
-        try? data.write(to: fileURL)
+        guard let data = try? JSONEncoder().encode(notes),
+              let encrypted = CryptoManager.encrypt(data) else { return }
+        try? encrypted.write(to: fileURL)
     }
 
     func add(title: String, content: String) {
