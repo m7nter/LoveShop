@@ -41,23 +41,23 @@ final class FileStorageManager {
                                                   withIntermediateDirectories: true)
     }
 
+    /// Сохраняет фото в зашифрованном виде (AES-256-GCM). На диске лежит
+    /// не валидный JPEG, а шифротекст — открыть файл напрямую (например,
+    /// через сторонний файловый менеджер) без ключа из Keychain невозможно.
     func save(image: UIImage, location: CLLocation? = nil) -> URL? {
-        guard let data = image.jpegData(compressionQuality: 0.92) else { return nil }
+        guard let jpeg = image.jpegData(compressionQuality: 0.92),
+              let encrypted = CryptoManager.encrypt(jpeg) else { return nil }
         let name = UUID().uuidString
         let url = vaultDirectory.appendingPathComponent("\(name).jpg")
-        try? data.write(to: url)
+        try? encrypted.write(to: url)
 
-        // Сохраняем метаданные рядом
         if let loc = location {
             let meta = PhotoMeta(
                 latitude: loc.coordinate.latitude,
                 longitude: loc.coordinate.longitude,
                 date: Date()
             )
-            if let metaData = try? JSONEncoder().encode(meta) {
-                let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
-                try? metaData.write(to: metaURL)
-            }
+            saveMeta(meta, for: url)
         }
 
         return url
@@ -78,11 +78,40 @@ final class FileStorageManager {
             }
     }
 
+    /// Возвращает расшифрованное изображение по URL зашифрованного файла.
+    func loadImage(at url: URL) -> UIImage? {
+        guard let data = decryptedData(for: url) else { return nil }
+        return UIImage(data: data)
+    }
+
+    /// Возвращает расшифрованные сырые байты JPEG (используется при экспорте).
+    /// Если файл был сохранён ДО включения шифрования (старые данные),
+    /// расшифровка не удастся — в этом случае пробуем прочитать
+    /// файл как обычный незашифрованный JPEG, чтобы не потерять
+    /// уже снятые фото.
+    func decryptedData(for url: URL) -> Data? {
+        guard let raw = try? Data(contentsOf: url) else { return nil }
+        if let decrypted = CryptoManager.decrypt(raw) {
+            return decrypted
+        }
+        // Старый незашифрованный файл — отдаём как есть.
+        return raw
+    }
+
     func loadMeta(for url: URL) -> PhotoMeta? {
         let name = url.deletingPathExtension().lastPathComponent
         let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
-        guard let data = try? Data(contentsOf: metaURL) else { return nil }
-        return try? JSONDecoder().decode(PhotoMeta.self, from: data)
+        guard let raw = try? Data(contentsOf: metaURL) else { return nil }
+        let plain = CryptoManager.decrypt(raw) ?? raw
+        return try? JSONDecoder().decode(PhotoMeta.self, from: plain)
+    }
+
+    private func saveMeta(_ meta: PhotoMeta, for url: URL) {
+        let name = url.deletingPathExtension().lastPathComponent
+        let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
+        guard let data = try? JSONEncoder().encode(meta),
+              let encrypted = CryptoManager.encrypt(data) else { return }
+        try? encrypted.write(to: metaURL)
     }
 
     func loadAllWithMeta() -> [(URL, PhotoMeta?)] {
@@ -94,21 +123,21 @@ final class FileStorageManager {
         return CLLocation(latitude: m.latitude, longitude: m.longitude)
     }
 
-    func updateNote(for url: URL, note: String) {
-        let name = url.deletingPathExtension().lastPathComponent
-        let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
+    /// Перезаписывает уже отредактированное фото (та же шифрованная схема).
+    func overwrite(image: UIImage, at url: URL) {
+        guard let jpeg = image.jpegData(compressionQuality: 0.85),
+              let encrypted = CryptoManager.encrypt(jpeg) else { return }
+        try? encrypted.write(to: url)
+    }
 
+    func updateNote(for url: URL, note: String) {
         var meta = loadMeta(for: url) ?? PhotoMeta(latitude: 0, longitude: 0, date: Date())
         meta.note = note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : note
-
-        if let data = try? JSONEncoder().encode(meta) {
-            try? data.write(to: metaURL)
-        }
+        saveMeta(meta, for: url)
     }
 
     func delete(url: URL) {
         try? FileManager.default.removeItem(at: url)
-        // Удаляем метаданные
         let name = url.deletingPathExtension().lastPathComponent
         let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
         try? FileManager.default.removeItem(at: metaURL)
