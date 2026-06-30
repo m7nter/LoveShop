@@ -1,10 +1,13 @@
 import SwiftUI
 import AVFoundation
+import CoreLocation
 
 struct VaultView: View {
     @StateObject private var locationManager = LocationManager.shared
     @State private var showCamera = false
     @State private var capturedImage: UIImage?
+    @State private var capturedLocation: CLLocation?
+    @State private var capturedHeading: CLHeading?
     @State private var showEditor = false
     @State private var showGallery = false
     @State private var showVaultLock = false
@@ -69,25 +72,29 @@ struct VaultView: View {
         }
         .onDisappear { cameraVM.stopSession() }
         .fullScreenCover(isPresented: $showCamera) {
-            CameraScreen(cameraVM: cameraVM) { img in
-                capturedImage = img
+            CameraScreen(cameraVM: cameraVM) { img, loc, hdg in
                 showCamera = false
                 if cameraVM.quickMode {
-                    _ = FileStorageManager.shared.save(
-                        image: img,
-                        location: LocationManager.shared.location
+                    let label = UserDefaults.standard.string(forKey: "selectedTemplate")
+                        .flatMap { $0.isEmpty ? nil : $0 }
+                    let watermarked = WatermarkRenderer.apply(
+                        to: img, location: loc, heading: hdg, labelText: label
                     )
+                    _ = FileStorageManager.shared.save(image: watermarked, location: loc)
                 } else {
+                    capturedImage = img
+                    capturedLocation = loc
+                    capturedHeading = hdg
                     showEditor = true
                 }
             }
         }
         .fullScreenCover(isPresented: $showEditor) {
             if let img = capturedImage {
-                PhotoEditorView(image: img) { edited in
+                PhotoEditorView(image: img, location: capturedLocation, heading: capturedHeading) { edited in
                     _ = FileStorageManager.shared.save(
                         image: edited,
-                        location: LocationManager.shared.location
+                        location: capturedLocation
                     )
                     showEditor = false
                 } onDiscard: {
