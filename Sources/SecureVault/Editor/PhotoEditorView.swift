@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 // MARK: - Хранилище шаблонов
 class LabelTemplatesStore: ObservableObject {
@@ -17,7 +18,12 @@ class LabelTemplatesStore: ObservableObject {
 
 // MARK: - PhotoEditorView
 struct PhotoEditorView: View {
+    /// Сырое фото без впечатанного водяного знака — он накладывается
+    /// здесь, при сохранении, чтобы использовать актуальный выбранный
+    /// шаблон подписи, а не тот, что был выбран на момент съёмки.
     let image: UIImage
+    let location: CLLocation?
+    let heading: CLHeading?
     let onSave: (UIImage) -> Void
     let onDiscard: () -> Void
 
@@ -120,23 +126,39 @@ struct PhotoEditorView: View {
         guard !isSaving else { return }
         isSaving = true
 
-        let imageSize = image.size
-        let scaleX = canvasSize.width / imageSize.width
-        let scaleY = canvasSize.height / imageSize.height
-        let scale = min(scaleX, scaleY)
-        let displayedSize = CGSize(width: imageSize.width * scale,
-                                   height: imageSize.height * scale)
-        let offsetX = (canvasSize.width - displayedSize.width) / 2
-        let offsetY = (canvasSize.height - displayedSize.height) / 2
-        let toImageX = imageSize.width / displayedSize.width
-        let toImageY = imageSize.height / displayedSize.height
+        let rawImage = image
+        let loc = location
+        let hdg = heading
+        let labelText = store.selected.trimmingCharacters(in: .whitespaces).isEmpty
+            ? nil : store.selected
         let shapesCopy = shapes
-        let imageCopy = image
+        let canvasSizeCopy = canvasSize
 
         DispatchQueue.global(qos: .userInitiated).async {
+            // Сначала впечатываем актуальный watermark (координаты, азимут,
+            // перекрестие, подпись-шаблон — выбранную только что), затем
+            // поверх него рисуем аннотации (стрелки/овалы).
+            let baseImage = WatermarkRenderer.apply(
+                to: rawImage,
+                location: loc,
+                heading: hdg,
+                labelText: labelText
+            )
+
+            let imageSize = baseImage.size
+            let scaleX = canvasSizeCopy.width / imageSize.width
+            let scaleY = canvasSizeCopy.height / imageSize.height
+            let scale = min(scaleX, scaleY)
+            let displayedSize = CGSize(width: imageSize.width * scale,
+                                       height: imageSize.height * scale)
+            let offsetX = (canvasSizeCopy.width - displayedSize.width) / 2
+            let offsetY = (canvasSizeCopy.height - displayedSize.height) / 2
+            let toImageX = imageSize.width / displayedSize.width
+            let toImageY = imageSize.height / displayedSize.height
+
             let renderer = UIGraphicsImageRenderer(size: imageSize)
             let result = renderer.image { ctx in
-                imageCopy.draw(at: .zero)
+                baseImage.draw(at: .zero)
 
                 for shape in shapesCopy {
                     let start = CGPoint(
