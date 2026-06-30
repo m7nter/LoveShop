@@ -6,6 +6,7 @@ struct Note: Codable, Identifiable {
     var content: String
     var createdDate: Date
     var modifiedDate: Date
+    var isPinned: Bool = false
 }
 
 final class NotesManager {
@@ -43,6 +44,14 @@ final class NotesManager {
             var updated = note
             updated.modifiedDate = Date()
             notes[idx] = updated
+            saveAll(notes)
+        }
+    }
+
+    func togglePin(_ note: Note) {
+        var notes = loadAll()
+        if let idx = notes.firstIndex(where: { $0.id == note.id }) {
+            notes[idx].isPinned.toggle()
             saveAll(notes)
         }
     }
