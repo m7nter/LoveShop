@@ -5,6 +5,26 @@ struct PhotoMeta: Codable {
     let latitude: Double
     let longitude: Double
     let date: Date
+    var note: String? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case latitude, longitude, date, note
+    }
+
+    init(latitude: Double, longitude: Double, date: Date, note: String? = nil) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.date = date
+        self.note = note
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        latitude = try container.decode(Double.self, forKey: .latitude)
+        longitude = try container.decode(Double.self, forKey: .longitude)
+        date = try container.decode(Date.self, forKey: .date)
+        note = try container.decodeIfPresent(String.self, forKey: .note)
+    }
 }
 
 final class FileStorageManager {
@@ -27,6 +47,7 @@ final class FileStorageManager {
         let url = vaultDirectory.appendingPathComponent("\(name).jpg")
         try? data.write(to: url)
 
+        // Сохраняем метаданные рядом
         if let loc = location {
             let meta = PhotoMeta(
                 latitude: loc.coordinate.latitude,
@@ -73,8 +94,21 @@ final class FileStorageManager {
         return CLLocation(latitude: m.latitude, longitude: m.longitude)
     }
 
+    func updateNote(for url: URL, note: String) {
+        let name = url.deletingPathExtension().lastPathComponent
+        let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
+
+        var meta = loadMeta(for: url) ?? PhotoMeta(latitude: 0, longitude: 0, date: Date())
+        meta.note = note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : note
+
+        if let data = try? JSONEncoder().encode(meta) {
+            try? data.write(to: metaURL)
+        }
+    }
+
     func delete(url: URL) {
         try? FileManager.default.removeItem(at: url)
+        // Удаляем метаданные
         let name = url.deletingPathExtension().lastPathComponent
         let metaURL = vaultDirectory.appendingPathComponent("\(name).json")
         try? FileManager.default.removeItem(at: metaURL)
