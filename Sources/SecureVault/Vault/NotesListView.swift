@@ -17,6 +17,14 @@ struct NotesListView: View {
         }
     }
 
+    private var pinnedNotes: [Note] {
+        filteredNotes.filter { $0.isPinned }
+    }
+
+    private var unpinnedNotes: [Note] {
+        filteredNotes.filter { !$0.isPinned }
+    }
+
     var body: some View {
         NavigationView {
             List {
@@ -24,33 +32,16 @@ struct NotesListView: View {
                     Text(searchText.isEmpty ? "Нет заметок" : "Ничего не найдено")
                         .foregroundColor(.secondary)
                 } else {
-                    ForEach(filteredNotes) { note in
-                        Button {
-                            editingNote = note
-                            showEditor = true
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(note.title.isEmpty ? "Без названия" : note.title)
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                if !note.content.isEmpty {
-                                    Text(note.content)
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                        .lineLimit(2)
-                                }
-                                Text(formatDate(note.modifiedDate))
-                                    .font(.caption2)
-                                    .foregroundColor(.gray)
+                    if !pinnedNotes.isEmpty {
+                        Section("Закреплённые") {
+                            ForEach(pinnedNotes) { note in
+                                noteRow(note)
                             }
                         }
-                        .swipeActions {
-                            Button(role: .destructive) {
-                                noteToDelete = note
-                                showDeleteConfirm = true
-                            } label: {
-                                Label("Удалить", systemImage: "trash")
-                            }
+                    }
+                    Section(pinnedNotes.isEmpty ? "" : "Все заметки") {
+                        ForEach(unpinnedNotes) { note in
+                            noteRow(note)
                         }
                     }
                 }
@@ -91,8 +82,57 @@ struct NotesListView: View {
         }
     }
 
+    @ViewBuilder
+    private func noteRow(_ note: Note) -> some View {
+        Button {
+            editingNote = note
+            showEditor = true
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    if note.isPinned {
+                        Image(systemName: "pin.fill")
+                            .font(.caption2)
+                            .foregroundColor(.orange)
+                    }
+                    Text(note.title.isEmpty ? "Без названия" : note.title)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                }
+                if !note.content.isEmpty {
+                    Text(note.content)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+                Text(formatDate(note.modifiedDate))
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+            }
+        }
+        .swipeActions(edge: .leading) {
+            Button {
+                NotesManager.shared.togglePin(note)
+                reload()
+            } label: {
+                Label(note.isPinned ? "Открепить" : "Закрепить",
+                      systemImage: note.isPinned ? "pin.slash" : "pin")
+            }
+            .tint(.orange)
+        }
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) {
+                noteToDelete = note
+                showDeleteConfirm = true
+            } label: {
+                Label("Удалить", systemImage: "trash")
+            }
+        }
+    }
+
     private func reload() {
-        notes = NotesManager.shared.loadAll().sorted { $0.modifiedDate > $1.modifiedDate }
+        let all = NotesManager.shared.loadAll()
+        notes = all.sorted { $0.modifiedDate > $1.modifiedDate }
     }
 
     private func formatDate(_ date: Date) -> String {
@@ -108,6 +148,7 @@ struct NoteEditorView: View {
     @Environment(\.dismiss) var dismiss
     @State private var title: String = ""
     @State private var content: String = ""
+    @State private var isPinned: Bool = false
 
     var body: some View {
         NavigationView {
@@ -118,6 +159,12 @@ struct NoteEditorView: View {
                 Section("Текст") {
                     TextEditor(text: $content)
                         .frame(minHeight: 250)
+                }
+                if note != nil {
+                    Section {
+                        Toggle("Закрепить заметку", isOn: $isPinned)
+                            .tint(.orange)
+                    }
                 }
             }
             .navigationTitle(note == nil ? "Новая заметка" : "Редактирование")
@@ -141,6 +188,7 @@ struct NoteEditorView: View {
             if let note = note {
                 title = note.title
                 content = note.content
+                isPinned = note.isPinned
             }
         }
     }
@@ -150,6 +198,7 @@ struct NoteEditorView: View {
             var updated = existing
             updated.title = title
             updated.content = content
+            updated.isPinned = isPinned
             NotesManager.shared.update(updated)
         } else {
             NotesManager.shared.add(title: title, content: content)
