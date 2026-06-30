@@ -131,9 +131,7 @@ struct GalleryEditorView: View {
             }
         }
 
-        if let data = result.jpegData(compressionQuality: 0.85) {
-            try? data.write(to: savingURL)
-        }
+        FileStorageManager.shared.overwrite(image: result, at: savingURL)
     }
 
     private func drawArrow(ctx: CGContext, from start: CGPoint, to end: CGPoint,
