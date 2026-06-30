@@ -3,7 +3,7 @@ import CoreLocation
 
 struct CameraScreen: View {
     @ObservedObject var cameraVM: CameraViewModel
-    let onCapture: (UIImage) -> Void
+    let onCapture: (UIImage, CLLocation?, CLHeading?) -> Void
     @Environment(\.dismiss) var dismiss
     @ObservedObject private var locationManager = LocationManager.shared
     @ObservedObject private var settings = SettingsStore.shared
@@ -132,8 +132,8 @@ struct CameraScreen: View {
 
                         Button {
                             guard !isCaptureBlocked else { return }
-                            cameraVM.capturePhoto { img in
-                                onCapture(img)
+                            cameraVM.capturePhoto { img, loc, hdg in
+                                onCapture(img, loc, hdg)
                             }
                         } label: {
                             ZStack {
@@ -179,8 +179,8 @@ struct CameraScreen: View {
             if settings.volumeButtonCaptureEnabled {
                 VolumeButtonHandler.shared.onTrigger = {
                     guard !isCaptureBlocked else { return }
-                    cameraVM.capturePhoto { img in
-                        onCapture(img)
+                    cameraVM.capturePhoto { img, loc, hdg in
+                        onCapture(img, loc, hdg)
                     }
                 }
                 VolumeButtonHandler.shared.start()
